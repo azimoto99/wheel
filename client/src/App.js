@@ -19,6 +19,7 @@ function App() {
   const [userName, setUserName] = useState('');
   const [theme, setTheme] = useState('modern');
   const [spinHistory, setSpinHistory] = useState([]);
+  const [currentSpinData, setCurrentSpinData] = useState(null);
   
   useEffect(() => {
     const newSocket = io(SERVER_URL);
@@ -61,20 +62,32 @@ function App() {
       console.log('Movie removed:', movieId);
     });
     
-    newSocket.on('wheel-spinning', ({ duration, selectedMovie: spinResult, spinnedBy }) => {
-      setIsSpinning(true);
-      setSelectedMovie(spinResult);
+    newSocket.on('wheel-spinning', (spinData) => {
+      const { duration, selectedMovie: spinResult, spinnedBy, syncMode, totalRotation } = spinData;
       
-      console.log(`Wheel spun by ${spinnedBy}, selected: ${spinResult.title}`);
+      setIsSpinning(true);
+      setCurrentSpinData({ ...spinData, timestamp: Date.now() }); // Add timestamp for React key
+      setSelectedMovie(null); // Clear previous selection
+      
+      console.log(`Wheel spun by ${spinnedBy}, selected: ${spinResult.title}${syncMode ? ' (synced)' : ''}`);
+      
+      const actualDuration = syncMode && spinData.remainingTime ? 
+        spinData.remainingTime : duration * 1000;
       
       setTimeout(() => {
         setIsSpinning(false);
-        setSpinHistory(prev => [...prev, {
-          movie: spinResult,
-          timestamp: new Date(),
-          spinnedBy
-        }]);
-      }, duration * 1000);
+        setSelectedMovie(spinResult);
+        setCurrentSpinData(null);
+        
+        // Only add to history if this isn't a sync event
+        if (!syncMode) {
+          setSpinHistory(prev => [...prev, {
+            movie: spinResult,
+            timestamp: new Date(),
+            spinnedBy
+          }]);
+        }
+      }, actualDuration);
     });
     
     newSocket.on('error', (error) => {
@@ -130,10 +143,16 @@ function App() {
     socket.emit('remove-movie', { movieId });
   };
   
-  const handleSpinWheel = (duration, selectedMovie) => {
+  const handleSpinWheel = (duration, selectedMovie, isSpinRequest = false) => {
     if (movies.length === 0) return;
     
-    socket.emit('spin-wheel', { duration, selectedMovie });
+    if (isSpinRequest) {
+      // This is a request to start spinning - emit to server for coordination
+      socket.emit('start-spin', { duration });
+    } else {
+      // This is the old behavior - keep for backward compatibility if needed
+      socket.emit('spin-wheel', { duration, selectedMovie });
+    }
   };
   
   const themes = [
@@ -192,6 +211,7 @@ function App() {
               isSpinning={isSpinning}
               selectedMovie={selectedMovie}
               theme={theme}
+              spinData={currentSpinData}
             />
           ) : (
             <div className="welcome-screen">

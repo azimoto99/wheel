@@ -57,6 +57,7 @@ app.post('/api/rooms/create', (req, res) => {
     users: new Map(),
     movies: [],
     currentMusic: null,
+    currentSpin: null,
     createdAt: new Date()
   };
   
@@ -148,8 +149,24 @@ io.on('connection', (socket) => {
       name: room.name,
       users: Array.from(room.users.values()),
       movies: room.movies,
-      currentMusic: room.currentMusic
+      currentMusic: room.currentMusic,
+      currentSpin: room.currentSpin
     });
+    
+    // If there's an ongoing spin, sync the new user with it
+    if (room.currentSpin) {
+      const timeElapsed = Date.now() - room.currentSpin.startTime;
+      const remainingTime = Math.max(0, (room.currentSpin.duration * 1000) - timeElapsed);
+      
+      if (remainingTime > 100) { // Only sync if there's meaningful time left
+        socket.emit('wheel-spinning', {
+          ...room.currentSpin,
+          syncMode: true,
+          timeElapsed,
+          remainingTime
+        });
+      }
+    }
     
     socket.to(roomCode).emit('user-joined', user);
     
@@ -203,7 +220,7 @@ io.on('connection', (socket) => {
     console.log(`Movie removed from room ${roomCode}:`, movieId);
   });
   
-  socket.on('spin-wheel', ({ duration, selectedMovie }) => {
+  socket.on('start-spin', ({ duration }) => {
     const roomCode = userRooms.get(socket.id);
     const room = rooms.get(roomCode);
     
@@ -212,13 +229,48 @@ io.on('connection', (socket) => {
       return;
     }
     
-    io.to(roomCode).emit('wheel-spinning', {
-      duration,
-      selectedMovie,
-      spinnedBy: room.users.get(socket.id)?.name || 'Unknown'
-    });
+    if (room.movies.length === 0) {
+      socket.emit('error', { message: 'No movies in wheel' });
+      return;
+    }
     
-    console.log(`Wheel spun in room ${roomCode} by ${room.users.get(socket.id)?.name}`);
+    // Generate synchronized spin parameters on server
+    const minSpins = 5;
+    const maxSpins = 8;
+    const spins = minSpins + Math.random() * (maxSpins - minSpins);
+    const randomEndAngle = Math.random() * 2 * Math.PI;
+    const totalRotation = (spins * 2 * Math.PI) + randomEndAngle;
+    
+    // Calculate winning movie based on final rotation
+    const normalizedRotation = ((totalRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+    const anglePerSegment = (2 * Math.PI) / room.movies.length;
+    const winningIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % room.movies.length;
+    const selectedMovie = room.movies[winningIndex];
+    
+    // Create synchronized spin data with timestamp
+    const spinData = {
+      duration,
+      totalRotation,
+      selectedMovie,
+      spinnedBy: room.users.get(socket.id)?.name || 'Unknown',
+      startTime: Date.now(),
+      timestamp: Date.now() // For client synchronization
+    };
+    
+    // Store current spin in room for late joiners
+    room.currentSpin = spinData;
+    
+    // Broadcast to all clients in room
+    io.to(roomCode).emit('wheel-spinning', spinData);
+    
+    // Clear the spin data after it completes
+    setTimeout(() => {
+      if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
+        room.currentSpin = null;
+      }
+    }, duration * 1000 + 1000); // Add 1 second buffer
+    
+    console.log(`Wheel spun in room ${roomCode} by ${room.users.get(socket.id)?.name}, winner: ${selectedMovie.title}`);
   });
   
   socket.on('update-music', ({ musicUrl }) => {

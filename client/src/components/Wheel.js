@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './Wheel.css';
 
-const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) => {
+const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', spinData }) => {
   const canvasRef = useRef(null);
   const [rotation, setRotation] = useState(0);
   const [spinDuration, setSpinDuration] = useState(5);
@@ -35,8 +35,12 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     drawWheel();
   }, [movies, theme, selectedMovie]);
   
-  // Remove the old spinning effect that was triggered by props
-  // Now we handle spinning internally with the spinWheel function
+  // Handle synchronized spin data from server
+  useEffect(() => {
+    if (spinData && !isAnimating) {
+      performSynchronizedSpin(spinData);
+    }
+  }, [spinData]);
   
   const drawWheel = () => {
     const canvas = canvasRef.current;
@@ -211,41 +215,55 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     return movies[winningIndex];
   };
   
-  const spinWheel = () => {
-    if (movies.length === 0 || isAnimating) return;
+  const performSynchronizedSpin = (spinData, timeOffset = 0) => {
+    if (!spinData || isAnimating) return;
     
     setIsAnimating(true);
     
-    // Generate random final rotation (multiple full spins + random end position)
-    const minSpins = 5;
-    const maxSpins = 8;
-    const spins = minSpins + Math.random() * (maxSpins - minSpins);
-    const randomEndAngle = Math.random() * 2 * Math.PI;
-    const finalRotation = rotation + (spins * 2 * Math.PI) + randomEndAngle;
+    const { totalRotation, duration, selectedMovie, syncMode, remainingTime } = spinData;
+    const finalRotation = rotation + totalRotation;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
     
+    let actualDuration = duration;
+    let startRotation = rotation;
+    
+    // Handle mid-spin synchronization for users who joined late
+    if (syncMode && remainingTime) {
+      actualDuration = remainingTime / 1000; // Convert to seconds
+      // Calculate how much rotation should have already occurred
+      const progressRatio = 1 - (remainingTime / (duration * 1000));
+      startRotation = rotation + (totalRotation * progressRatio);
+    }
+    
     // Apply CSS animation
-    canvas.style.transition = `transform ${spinDuration}s cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
+    canvas.style.transition = `transform ${actualDuration}s cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
     canvas.style.transform = `rotate(${finalRotation}rad)`;
     
-    // Determine winning movie after spin completes
+    // Complete the spin
     setTimeout(() => {
       canvas.style.transition = 'none';
       setRotation(finalRotation);
       setIsAnimating(false);
       
-      const winningMovie = getWinningMovie(finalRotation);
-      if (winningMovie) {
-        onSpin(spinDuration, winningMovie);
-      }
-    }, spinDuration * 1000);
+      // The selected movie is already determined by the server
+      // No need to call onSpin here since the App component handles the result
+    }, actualDuration * 1000);
+  };
+  
+  const startSpin = () => {
+    if (movies.length === 0 || isAnimating) return;
+    
+    // Send spin request to server instead of spinning locally
+    if (onSpin) {
+      onSpin(spinDuration, null, true); // Third parameter indicates this is a spin start request
+    }
   };
   
   const handleCanvasClick = () => {
     if (movies.length === 0 || isSpinning || isAnimating) return;
-    spinWheel();
+    startSpin();
   };
   
   return (
@@ -298,9 +316,9 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
             <button
               className={`spin-button ${isSpinning ? 'spinning' : ''}`}
               onClick={handleCanvasClick}
-              disabled={isSpinning}
+              disabled={isSpinning || isAnimating}
             >
-              {isSpinning ? 'Spinning...' : 'SPIN'}
+              {(isSpinning || isAnimating) ? 'Spinning...' : 'SPIN'}
             </button>
           </>
         )}
