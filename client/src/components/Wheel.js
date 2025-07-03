@@ -5,6 +5,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
   const canvasRef = useRef(null);
   const [rotation, setRotation] = useState(0);
   const [spinDuration, setSpinDuration] = useState(5);
+  const [isAnimating, setIsAnimating] = useState(false);
   
   const colors = {
     modern: ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'],
@@ -18,11 +19,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     drawWheel();
   }, [movies, theme, selectedMovie]);
   
-  useEffect(() => {
-    if (isSpinning && selectedMovie) {
-      spinToMovie();
-    }
-  }, [isSpinning, selectedMovie]);
+  // Remove the old spinning effect that was triggered by props
+  // Now we handle spinning internally with the spinWheel function
   
   const drawWheel = () => {
     const canvas = canvasRef.current;
@@ -87,6 +85,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     });
     
     drawPointer(ctx, centerX, centerY, radius);
+    drawWinningIndicator(ctx, centerX, centerY, radius);
     
     if (selectedMovie) {
       highlightSelectedSegment(ctx, centerX, centerY, radius);
@@ -94,28 +93,56 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
   };
   
   const drawPointer = (ctx, centerX, centerY, radius) => {
-    const gradient = ctx.createLinearGradient(centerX - 15, centerY - radius - 20, centerX + 15, centerY - radius - 5);
+    // Draw pointer at 3 o'clock position (right side)
+    const gradient = ctx.createLinearGradient(centerX + radius + 5, centerY - 15, centerX + radius + 20, centerY + 15);
     gradient.addColorStop(0, 'var(--accent-primary)');
     gradient.addColorStop(1, 'var(--accent-hover)');
     
     ctx.fillStyle = gradient;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetY = 2;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 2;
     
     ctx.beginPath();
-    ctx.moveTo(centerX, centerY - radius - 25);
-    ctx.lineTo(centerX - 12, centerY - radius - 8);
-    ctx.lineTo(centerX + 12, centerY - radius - 8);
+    ctx.moveTo(centerX + radius + 25, centerY);
+    ctx.lineTo(centerX + radius + 8, centerY - 15);
+    ctx.lineTo(centerX + radius + 8, centerY + 15);
     ctx.closePath();
+    ctx.fill();
+    
+    // Add a small circle at the base of the pointer
+    ctx.beginPath();
+    ctx.arc(centerX + radius + 8, centerY, 4, 0, 2 * Math.PI);
     ctx.fill();
     
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.shadowOffsetX = 0;
+  };
+  
+  const drawWinningIndicator = (ctx, centerX, centerY, radius) => {
+    // Draw a line from center to 3 o'clock position to show winning position
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 5]);
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + radius, centerY);
+    ctx.stroke();
+    
+    ctx.setLineDash([]); // Reset line dash
+    
+    // Add "WINNER" text near the pointer
+    ctx.fillStyle = 'var(--accent-primary)';
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('WINNER', centerX + radius + 35, centerY - 20);
   };
   
   const highlightSelectedSegment = (ctx, centerX, centerY, radius) => {
+    if (!selectedMovie) return;
+    
     const selectedIndex = movies.findIndex(movie => movie.id === selectedMovie.id);
     if (selectedIndex === -1) return;
     
@@ -123,51 +150,82 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     const startAngle = selectedIndex * anglePerSegment;
     const endAngle = (selectedIndex + 1) * anglePerSegment;
     
-    ctx.strokeStyle = 'var(--accent-primary)';
-    ctx.lineWidth = 4;
-    ctx.shadowColor = 'var(--accent-primary)';
-    ctx.shadowBlur = 8;
+    // Highlight the winning segment with a glowing border
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 6;
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 12;
     
     ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, radius + 2, startAngle, endAngle);
-    ctx.closePath();
+    ctx.arc(centerX, centerY, radius + 3, startAngle, endAngle);
+    ctx.stroke();
+    
+    // Add inner glow
+    ctx.strokeStyle = '#FFF';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = '#FFF';
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius - 2, startAngle, endAngle);
     ctx.stroke();
     
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
   };
   
-  const spinToMovie = () => {
-    if (!selectedMovie || movies.length === 0) return;
+  const getWinningMovie = (finalRotation) => {
+    if (movies.length === 0) return null;
     
-    const selectedIndex = movies.findIndex(movie => movie.id === selectedMovie.id);
-    if (selectedIndex === -1) return;
+    // Normalize rotation to 0-2π range
+    const normalizedRotation = ((finalRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
     
+    // Calculate which segment is at 3 o'clock (0 radians) position
+    // Since we want the segment that the pointer (at 3 o'clock) is pointing to
     const anglePerSegment = (2 * Math.PI) / movies.length;
-    const targetAngle = (selectedIndex * anglePerSegment) + (anglePerSegment / 2);
-    const spins = 5 + Math.random() * 3;
-    const finalRotation = (spins * 2 * Math.PI) - targetAngle;
+    
+    // The wheel rotates clockwise, so we need to account for that
+    // The winning segment is the one that ends up at the pointer position
+    const winningIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % movies.length;
+    
+    return movies[winningIndex];
+  };
+  
+  const spinWheel = () => {
+    if (movies.length === 0 || isAnimating) return;
+    
+    setIsAnimating(true);
+    
+    // Generate random final rotation (multiple full spins + random end position)
+    const minSpins = 5;
+    const maxSpins = 8;
+    const spins = minSpins + Math.random() * (maxSpins - minSpins);
+    const randomEndAngle = Math.random() * 2 * Math.PI;
+    const finalRotation = rotation + (spins * 2 * Math.PI) + randomEndAngle;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
     
+    // Apply CSS animation
     canvas.style.transition = `transform ${spinDuration}s cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
     canvas.style.transform = `rotate(${finalRotation}rad)`;
     
+    // Determine winning movie after spin completes
     setTimeout(() => {
       canvas.style.transition = 'none';
       setRotation(finalRotation);
+      setIsAnimating(false);
+      
+      const winningMovie = getWinningMovie(finalRotation);
+      if (winningMovie) {
+        onSpin(spinDuration, winningMovie);
+      }
     }, spinDuration * 1000);
   };
   
   const handleCanvasClick = () => {
-    if (movies.length === 0 || isSpinning) return;
-    
-    const selectedIndex = Math.floor(Math.random() * movies.length);
-    const selectedMovie = movies[selectedIndex];
-    
-    onSpin(spinDuration, selectedMovie);
+    if (movies.length === 0 || isSpinning || isAnimating) return;
+    spinWheel();
   };
   
   return (

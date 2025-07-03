@@ -98,6 +98,8 @@
   cursor: pointer;
   background: var(--bg-secondary);
   border: 3px solid var(--border-color);
+  /* Ensure pointer area is visible */
+  margin-right: 40px;
 }
 
 .wheel-canvas:hover {
