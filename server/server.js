@@ -58,6 +58,7 @@ app.post('/api/rooms/create', (req, res) => {
     movies: [],
     currentMusic: null,
     currentSpin: null,
+    wheelRotation: 0,
     createdAt: new Date()
   };
   
@@ -150,7 +151,8 @@ io.on('connection', (socket) => {
       users: Array.from(room.users.values()),
       movies: room.movies,
       currentMusic: room.currentMusic,
-      currentSpin: room.currentSpin
+      currentSpin: room.currentSpin,
+      wheelRotation: room.wheelRotation
     });
     
     // If there's an ongoing spin, sync the new user with it
@@ -263,10 +265,12 @@ io.on('connection', (socket) => {
     // Broadcast to all clients in room
     io.to(roomCode).emit('wheel-spinning', spinData);
     
-    // Clear the spin data after it completes
+    // Clear the spin data after it completes and update wheel rotation
     setTimeout(() => {
       if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
         room.currentSpin = null;
+        // Update the room's wheel rotation to the final position
+        room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
       }
     }, duration * 1000 + 1000); // Add 1 second buffer
     

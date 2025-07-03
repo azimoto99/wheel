@@ -116,7 +116,7 @@
 .spin-button {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: calc(50% - 20px); /* Adjust for the margin-right on canvas */
   transform: translate(-50%, -50%);
   background: var(--bg-secondary);
   border: 3px solid var(--accent-primary);

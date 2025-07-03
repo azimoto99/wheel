@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './Wheel.css';
 
-const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', spinData }) => {
+const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', spinData, initialRotation = 0 }) => {
   const canvasRef = useRef(null);
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState(initialRotation);
   const [spinDuration, setSpinDuration] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -34,6 +34,17 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', sp
   useEffect(() => {
     drawWheel();
   }, [movies, theme, selectedMovie]);
+  
+  // Update rotation when initialRotation changes (on room join)
+  useEffect(() => {
+    if (initialRotation !== rotation && !isAnimating) {
+      setRotation(initialRotation);
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.style.transform = `rotate(${initialRotation}rad)`;
+      }
+    }
+  }, [initialRotation]);
   
   // Handle synchronized spin data from server
   useEffect(() => {
@@ -288,7 +299,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', sp
           <input
             type="range"
             min="3"
-            max="10"
+            max="100"
             value={spinDuration}
             onChange={(e) => setSpinDuration(Number(e.target.value))}
             disabled={isSpinning}

@@ -20,6 +20,7 @@ function App() {
   const [theme, setTheme] = useState('modern');
   const [spinHistory, setSpinHistory] = useState([]);
   const [currentSpinData, setCurrentSpinData] = useState(null);
+  const [wheelRotation, setWheelRotation] = useState(0);
   
   useEffect(() => {
     const newSocket = io(SERVER_URL);
@@ -39,6 +40,7 @@ function App() {
       setRoom(roomData);
       setUsers(roomData.users);
       setMovies(roomData.movies);
+      setWheelRotation(roomData.wheelRotation || 0);
       console.log('Joined room:', roomData);
     });
     
@@ -212,6 +214,7 @@ function App() {
               selectedMovie={selectedMovie}
               theme={theme}
               spinData={currentSpinData}
+              initialRotation={wheelRotation}
             />
           ) : (
             <div className="welcome-screen">

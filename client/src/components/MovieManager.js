@@ -25,11 +25,15 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
   const searchMovies = async (query) => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`/api/movies/search?q=${encodeURIComponent(query)}`);
+      const SERVER_URL = process.env.REACT_APP_SERVER_URL || 
+        (process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:3001');
+      
+      const response = await axios.get(`${SERVER_URL}/api/movies/search?q=${encodeURIComponent(query)}`);
+      console.log('TMDB Search Response:', response.data);
       setSuggestions(response.data);
       setShowSuggestions(true);
     } catch (error) {
-      console.error('Error searching movies:', error);
+      console.error('Error searching movies:', error.response?.data || error.message);
       setSuggestions([]);
     } finally {
       setIsLoading(false);
