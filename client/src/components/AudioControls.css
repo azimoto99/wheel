@@ -1,0 +1,269 @@
+.audio-controls {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  max-width: 400px;
+  height: fit-content;
+}
+
+.audio-controls h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  text-align: center;
+}
+
+.music-form {
+  margin-bottom: 20px;
+}
+
+.url-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.url-input input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.url-input input:focus {
+  outline: none;
+  border-color: #4ECDC4;
+}
+
+.url-input button {
+  background: #4ECDC4;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.url-input button:hover {
+  background: #45B7D1;
+}
+
+.current-track {
+  margin-bottom: 20px;
+}
+
+.current-track h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.youtube-player {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.youtube-player iframe {
+  display: block;
+  border-radius: 8px;
+}
+
+.audio-player {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.audio-controls-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.audio-controls-buttons button {
+  background: #4ECDC4;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audio-controls-buttons button:hover {
+  background: #45B7D1;
+  transform: scale(1.1);
+}
+
+.volume-controls {
+  margin-bottom: 20px;
+}
+
+.volume-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.volume-control:last-child {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-control label {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.volume-control input[type="range"] {
+  width: 100%;
+  height: 6px;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+  transition: background 0.3s;
+}
+
+.volume-control input[type="range"]:hover {
+  background: #ccc;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4ECDC4;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb:hover {
+  background: #45B7D1;
+  transform: scale(1.1);
+}
+
+.volume-control input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #4ECDC4;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s;
+}
+
+.volume-control input[type="range"]::-moz-range-thumb:hover {
+  background: #45B7D1;
+  transform: scale(1.1);
+}
+
+.toggle-button {
+  background: #ccc;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  min-width: 40px;
+}
+
+.toggle-button.enabled {
+  background: #4ECDC4;
+}
+
+.toggle-button.disabled {
+  background: #ff4757;
+}
+
+.toggle-button:hover {
+  transform: scale(1.1);
+}
+
+.sound-test {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.sound-test h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.sound-test-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sound-test-buttons button {
+  flex: 1;
+  background: #f1f2f6;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 8px 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.sound-test-buttons button:hover {
+  background: #e1e2e6;
+  transform: translateY(-2px);
+}
+
+.sound-test-buttons button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .audio-controls {
+    max-width: 100%;
+    padding: 15px;
+  }
+  
+  .url-input {
+    flex-direction: column;
+  }
+  
+  .url-input input {
+    font-size: 16px;
+  }
+  
+  .youtube-player iframe {
+    height: 150px;
+  }
+  
+  .audio-controls-buttons button {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .volume-control:last-child {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sound-test-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

@@ -1,0 +1,210 @@
+.wheel-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  min-height: 600px;
+}
+
+.wheel-controls {
+  margin-bottom: 20px;
+}
+
+.spin-duration-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.spin-duration-control label {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.spin-duration-control input[type="range"] {
+  width: 200px;
+  height: 6px;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+}
+
+.wheel-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wheel-canvas {
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.wheel-canvas:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(0,0,0,0.4);
+}
+
+.wheel-canvas.spinning {
+  cursor: not-allowed;
+}
+
+.spin-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border: 3px solid #333;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.spin-button:hover {
+  background: #333;
+  color: #fff;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.spin-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.spin-button.spinning {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.selected-movie {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 300px;
+}
+
+.selected-movie h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.movie-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: center;
+}
+
+.movie-info img {
+  width: 60px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.movie-info div h4 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.movie-info div p {
+  margin: 5px 0 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.wheel-container.dark {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.wheel-container.dark .selected-movie {
+  background: #333;
+  color: #fff;
+}
+
+.wheel-container.dark .spin-button {
+  background: #444;
+  color: #fff;
+  border-color: #666;
+}
+
+.wheel-container.dark .spin-button:hover {
+  background: #666;
+}
+
+.wheel-container.neon {
+  background: #000;
+  color: #0ff;
+}
+
+.wheel-container.neon .wheel-canvas {
+  box-shadow: 0 0 30px #0ff;
+}
+
+.wheel-container.neon .spin-button {
+  background: #000;
+  color: #0ff;
+  border-color: #0ff;
+  box-shadow: 0 0 10px #0ff;
+}
+
+.wheel-container.theater {
+  background: #800000;
+  color: #ffd700;
+}
+
+.wheel-container.theater .selected-movie {
+  background: #8b0000;
+  color: #ffd700;
+  border: 2px solid #ffd700;
+}
+
+.wheel-container.retro {
+  background: #f5f5dc;
+  color: #8b4513;
+}
+
+.wheel-container.retro .wheel-canvas {
+  box-shadow: 0 0 20px rgba(139, 69, 19, 0.5);
+}
+
+@media (max-width: 768px) {
+  .wheel-canvas {
+    width: 300px;
+    height: 300px;
+  }
+  
+  .spin-button {
+    width: 60px;
+    height: 60px;
+    font-size: 14px;
+  }
+  
+  .selected-movie {
+    min-width: 250px;
+  }
+  
+  .movie-info {
+    flex-direction: column;
+    text-align: center;
+  }
+}
