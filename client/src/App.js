@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import Wheel from './components/Wheel';
 import MovieManager from './components/MovieManager';
 import RoomControls from './components/RoomControls';
+import AudioControls from './components/AudioControls';
 import './App.css';
 
 const SERVER_URL = process.env.REACT_APP_SERVER_URL || 
@@ -17,7 +18,7 @@ function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [userName, setUserName] = useState('');
-  const [theme, setTheme] = useState('modern');
+  const [theme, setTheme] = useState('rosebud');
   const [spinHistory, setSpinHistory] = useState([]);
   const [currentSpinData, setCurrentSpinData] = useState(null);
   const [wheelRotation, setWheelRotation] = useState(0);
@@ -158,11 +159,11 @@ function App() {
   };
   
   const themes = [
-    { value: 'modern', label: 'Modern' },
-    { value: 'dark', label: 'Dark' },
-    { value: 'neon', label: 'Neon' },
-    { value: 'ocean', label: 'Ocean' },
-    { value: 'sunset', label: 'Sunset' }
+    { value: 'rosebud', label: 'Rosebud (Citizen Kane)' },
+    { value: 'godfather', label: 'Make It an Offer (The Godfather)' },
+    { value: 'mermaid', label: 'Under the Sea (The Little Mermaid)' },
+    { value: 'impossible', label: 'Mission Accepted (Mission Impossible)' },
+    { value: 'avengers', label: 'Assemble! (The Avengers)' }
   ];
   
   return (
@@ -196,12 +197,19 @@ function App() {
           />
           
           {room && (
-            <MovieManager
-              movies={movies}
-              onAddMovie={handleAddMovie}
-              onRemoveMovie={handleRemoveMovie}
-              disabled={isSpinning}
-            />
+            <>
+              <MovieManager
+                movies={movies}
+                onAddMovie={handleAddMovie}
+                onRemoveMovie={handleRemoveMovie}
+                disabled={isSpinning}
+              />
+              
+              <AudioControls
+                socket={socket}
+                roomCode={room?.code}
+              />
+            </>
           )}
         </div>
         

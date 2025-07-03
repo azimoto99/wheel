@@ -81,8 +81,11 @@ app.get('/api/movies/search', async (req, res) => {
   }
   
   // Check if TMDB API key is available
-  if (!process.env.TMDB_API_KEY || process.env.TMDB_API_KEY === 'your_tmdb_api_key_here') {
-    console.warn('TMDB API key not configured, returning mock data');
+  console.log('TMDB_API_KEY present:', !!process.env.TMDB_API_KEY);
+  console.log('TMDB_API_KEY length:', process.env.TMDB_API_KEY ? process.env.TMDB_API_KEY.length : 0);
+  
+  if (!process.env.TMDB_API_KEY || process.env.TMDB_API_KEY.trim() === '' || process.env.TMDB_API_KEY === 'your_tmdb_api_key_here') {
+    console.warn('TMDB API key not configured properly, returning mock data');
     // Return mock movie data for development
     const mockMovies = [
       { id: 1, title: q + ' (Mock Movie)', year: 2023, poster: null },
@@ -243,8 +246,9 @@ io.on('connection', (socket) => {
     const randomEndAngle = Math.random() * 2 * Math.PI;
     const totalRotation = (spins * 2 * Math.PI) + randomEndAngle;
     
-    // Calculate winning movie based on final rotation
-    const normalizedRotation = ((totalRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+    // Calculate winning movie based on final rotation (including current wheel position)
+    const finalWheelRotation = room.wheelRotation + totalRotation;
+    const normalizedRotation = ((finalWheelRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
     const anglePerSegment = (2 * Math.PI) / room.movies.length;
     const winningIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % room.movies.length;
     const selectedMovie = room.movies[winningIndex];

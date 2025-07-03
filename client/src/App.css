@@ -87,89 +87,89 @@ body {
   background: var(--bg-primary);
 }
 
-/* Modern Theme */
-.app.modern {
-  --bg-primary: linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%);
+/* Rosebud Theme - Citizen Kane (Black & White newspaper elegance) */
+.app.rosebud {
+  --bg-primary: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
   --bg-secondary: #ffffff;
-  --bg-tertiary: var(--gray-50);
-  --text-primary: var(--gray-900);
-  --text-secondary: var(--gray-600);
-  --text-muted: var(--gray-400);
-  --border-color: var(--gray-200);
-  --accent-primary: var(--primary-500);
-  --accent-secondary: var(--primary-100);
-  --accent-hover: var(--primary-600);
-  --success-color: var(--success-500);
-  --warning-color: var(--warning-500);
-  --error-color: var(--error-500);
+  --bg-tertiary: #f8f8f8;
+  --text-primary: #1c1c1c;
+  --text-secondary: #424242;
+  --text-muted: #757575;
+  --border-color: #e0e0e0;
+  --accent-primary: #2c2c2c;
+  --accent-secondary: #f5f5f5;
+  --accent-hover: #000000;
+  --success-color: #2e7d32;
+  --warning-color: #f57c00;
+  --error-color: #d32f2f;
 }
 
-/* Dark Theme */
-.app.dark {
-  --bg-primary: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
-  --bg-secondary: var(--gray-800);
-  --bg-tertiary: var(--gray-700);
-  --text-primary: var(--gray-50);
-  --text-secondary: var(--gray-300);
-  --text-muted: var(--gray-400);
-  --border-color: var(--gray-600);
-  --accent-primary: var(--primary-400);
-  --accent-secondary: var(--gray-700);
-  --accent-hover: var(--primary-300);
-  --success-color: var(--success-500);
-  --warning-color: var(--warning-500);
-  --error-color: var(--error-500);
+/* Godfather Theme - The Godfather (Rich burgundy and gold) */
+.app.godfather {
+  --bg-primary: linear-gradient(135deg, #2d1810 0%, #1a0e08 100%);
+  --bg-secondary: #3d2417;
+  --bg-tertiary: #4a2b1a;
+  --text-primary: #f5e6d3;
+  --text-secondary: #d4b896;
+  --text-muted: #a08660;
+  --border-color: #6b4423;
+  --accent-primary: #b8860b;
+  --accent-secondary: #8b4513;
+  --accent-hover: #daa520;
+  --success-color: #228b22;
+  --warning-color: #ff8c00;
+  --error-color: #8b0000;
 }
 
-/* Neon Theme */
-.app.neon {
-  --bg-primary: linear-gradient(135deg, #000000 0%, #1a0033 100%);
-  --bg-secondary: #0a0015;
-  --bg-tertiary: #1a0033;
-  --text-primary: #00ffff;
-  --text-secondary: #ff00ff;
-  --text-muted: #666699;
-  --border-color: #00ffff;
-  --accent-primary: #00ffff;
-  --accent-secondary: #1a0033;
-  --accent-hover: #ff00ff;
-  --success-color: #00ff00;
-  --warning-color: #ffff00;
-  --error-color: #ff0066;
-}
-
-/* Ocean Theme */
-.app.ocean {
-  --bg-primary: linear-gradient(135deg, #001122 0%, #003366 100%);
-  --bg-secondary: #002244;
-  --bg-tertiary: #003355;
+/* Mermaid Theme - The Little Mermaid (Ocean blues and coral) */
+.app.mermaid {
+  --bg-primary: linear-gradient(135deg, #001f3f 0%, #004080 50%, #0066cc 100%);
+  --bg-secondary: #003366;
+  --bg-tertiary: #004080;
   --text-primary: #ffffff;
-  --text-secondary: #66ccff;
-  --text-muted: #4488cc;
-  --border-color: #66ccff;
-  --accent-primary: #00aaff;
-  --accent-secondary: #003366;
-  --accent-hover: #33bbff;
-  --success-color: #00cc88;
-  --warning-color: #ff9933;
-  --error-color: #ff4466;
+  --text-secondary: #87ceeb;
+  --text-muted: #4682b4;
+  --border-color: #20b2aa;
+  --accent-primary: #ff7f50;
+  --accent-secondary: #20b2aa;
+  --accent-hover: #ff6347;
+  --success-color: #32cd32;
+  --warning-color: #ffd700;
+  --error-color: #dc143c;
 }
 
-/* Sunset Theme */
-.app.sunset {
-  --bg-primary: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffd23f 100%);
-  --bg-secondary: #ff8c42;
-  --bg-tertiary: #ffa726;
-  --text-primary: #2d1b00;
-  --text-secondary: #5d3a00;
-  --text-muted: #8d5a20;
-  --border-color: #ff8c42;
-  --accent-primary: #e65100;
-  --accent-secondary: #ff8c42;
-  --accent-hover: #cc4500;
-  --success-color: #4caf50;
-  --warning-color: #ff9800;
-  --error-color: #f44336;
+/* Impossible Theme - Mission Impossible (Sleek spy tech) */
+.app.impossible {
+  --bg-primary: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+  --bg-secondary: #1c1c1c;
+  --bg-tertiary: #2a2a2a;
+  --text-primary: #00ff41;
+  --text-secondary: #33ff66;
+  --text-muted: #66ff99;
+  --border-color: #00ff41;
+  --accent-primary: #ff0040;
+  --accent-secondary: #330008;
+  --accent-hover: #ff3366;
+  --success-color: #00ff41;
+  --warning-color: #ffaa00;
+  --error-color: #ff0040;
+}
+
+/* Avengers Theme - The Avengers (Heroic red, blue, and gold) */
+.app.avengers {
+  --bg-primary: linear-gradient(135deg, #000080 0%, #800020 50%, #ffd700 100%);
+  --bg-secondary: #1e3a8a;
+  --bg-tertiary: #1e40af;
+  --text-primary: #ffffff;
+  --text-secondary: #fbbf24;
+  --text-muted: #94a3b8;
+  --border-color: #dc2626;
+  --accent-primary: #dc2626;
+  --accent-secondary: #ffd700;
+  --accent-hover: #ef4444;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #dc2626;
 }
 
 .app-header {

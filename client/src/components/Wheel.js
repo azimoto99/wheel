@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './Wheel.css';
 
-const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', spinData, initialRotation = 0 }) => {
+const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', spinData, initialRotation = 0 }) => {
   const canvasRef = useRef(null);
   const [rotation, setRotation] = useState(initialRotation);
   const [spinDuration, setSpinDuration] = useState(5);
@@ -10,25 +10,25 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', sp
   // Get theme colors for Canvas (CSS variables don't work in Canvas)
   const getThemeColors = () => {
     switch(theme) {
-      case 'dark':
-        return { primary: '#38bdf8', hover: '#7dd3fc', empty: '#334155', border: '#475569' };
-      case 'neon':
-        return { primary: '#00ffff', hover: '#ff00ff', empty: '#1a0033', border: '#00ffff' };
-      case 'ocean':
-        return { primary: '#00aaff', hover: '#33bbff', empty: '#003355', border: '#66ccff' };
-      case 'sunset':
-        return { primary: '#e65100', hover: '#cc4500', empty: '#ffa726', border: '#ff8c42' };
-      default: // modern
-        return { primary: '#0ea5e9', hover: '#0284c7', empty: '#f8fafc', border: '#e2e8f0' };
+      case 'godfather':
+        return { primary: '#b8860b', hover: '#daa520', empty: '#4a2b1a', border: '#6b4423' };
+      case 'mermaid':
+        return { primary: '#ff7f50', hover: '#ff6347', empty: '#004080', border: '#20b2aa' };
+      case 'impossible':
+        return { primary: '#ff0040', hover: '#ff3366', empty: '#2a2a2a', border: '#00ff41' };
+      case 'avengers':
+        return { primary: '#dc2626', hover: '#ef4444', empty: '#1e40af', border: '#ffd700' };
+      default: // rosebud
+        return { primary: '#2c2c2c', hover: '#000000', empty: '#f8f8f8', border: '#e0e0e0' };
     }
   };
   
   const colors = {
-    modern: ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'],
-    dark: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#f97316', '#84cc16'],
-    neon: ['#00ffff', '#ff00ff', '#ffff00', '#ff0066', '#00ff00', '#ff6600', '#6600ff', '#ff0099'],
-    ocean: ['#00aaff', '#0088cc', '#66ccff', '#003366', '#0066aa', '#3399dd', '#004488', '#77ddff'],
-    sunset: ['#ff6b35', '#f7931e', '#ffd23f', '#e65100', '#ff8c42', '#ffa726', '#ff7043', '#ffab40']
+    rosebud: ['#2c2c2c', '#424242', '#616161', '#757575', '#9e9e9e', '#bdbdbd', '#e0e0e0', '#eeeeee'],
+    godfather: ['#b8860b', '#8b4513', '#daa520', '#cd853f', '#d2691e', '#f4a460', '#deb887', '#burlywood'],
+    mermaid: ['#ff7f50', '#20b2aa', '#87ceeb', '#4682b4', '#5f9ea0', '#7fffd4', '#40e0d0', '#48d1cc'],
+    impossible: ['#ff0040', '#00ff41', '#ffaa00', '#0080ff', '#ff8000', '#8000ff', '#00ff80', '#ff4080'],
+    avengers: ['#dc2626', '#1d4ed8', '#ffd700', '#ffffff', '#374151', '#ef4444', '#3b82f6', '#f59e0b']
   };
   
   useEffect(() => {
@@ -41,10 +41,20 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', sp
       setRotation(initialRotation);
       const canvas = canvasRef.current;
       if (canvas) {
+        canvas.style.transition = 'none';
         canvas.style.transform = `rotate(${initialRotation}rad)`;
       }
     }
   }, [initialRotation]);
+  
+  // Set initial rotation on canvas mount
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas && rotation !== 0) {
+      canvas.style.transition = 'none';
+      canvas.style.transform = `rotate(${rotation}rad)`;
+    }
+  }, []);
   
   // Handle synchronized spin data from server
   useEffect(() => {
@@ -78,7 +88,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern', sp
     }
     
     const anglePerSegment = (2 * Math.PI) / movies.length;
-    const themeColors = colors[theme] || colors.classic;
+    const themeColors = colors[theme] || colors.rosebud;
     
     movies.forEach((movie, index) => {
       const startAngle = index * anglePerSegment;

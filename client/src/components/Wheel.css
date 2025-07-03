@@ -303,31 +303,37 @@
 }
 
 /* Theme-specific wheel styles */
-.wheel-container.modern .wheel-canvas {
-  border-color: var(--primary-200);
+.wheel-container.rosebud .wheel-canvas {
+  border-color: #e0e0e0;
+  box-shadow: 0 0 30px rgba(44, 44, 44, 0.2), var(--shadow-2xl);
 }
 
-.wheel-container.dark .wheel-canvas {
-  border-color: var(--gray-600);
+.wheel-container.godfather .wheel-canvas {
+  border-color: #b8860b;
+  box-shadow: 0 0 30px rgba(184, 134, 11, 0.3), var(--shadow-2xl);
 }
 
-.wheel-container.neon .wheel-canvas {
-  border-color: #00ffff;
-  box-shadow: 0 0 30px #00ffff40, var(--shadow-2xl);
+.wheel-container.mermaid .wheel-canvas {
+  border-color: #20b2aa;
+  box-shadow: 0 0 30px rgba(32, 178, 170, 0.4), var(--shadow-2xl);
 }
 
-.wheel-container.neon .wheel-canvas:hover {
-  box-shadow: 0 0 50px #00ffff60, var(--shadow-2xl);
+.wheel-container.mermaid .wheel-canvas:hover {
+  box-shadow: 0 0 50px rgba(32, 178, 170, 0.6), var(--shadow-2xl);
 }
 
-.wheel-container.ocean .wheel-canvas {
-  border-color: #66ccff;
-  box-shadow: 0 0 30px #66ccff40, var(--shadow-2xl);
+.wheel-container.impossible .wheel-canvas {
+  border-color: #00ff41;
+  box-shadow: 0 0 30px rgba(255, 0, 64, 0.3), var(--shadow-2xl);
 }
 
-.wheel-container.sunset .wheel-canvas {
-  border-color: #ff8c42;
-  box-shadow: 0 0 30px #ff8c4240, var(--shadow-2xl);
+.wheel-container.impossible .wheel-canvas:hover {
+  box-shadow: 0 0 50px rgba(255, 0, 64, 0.5), var(--shadow-2xl);
+}
+
+.wheel-container.avengers .wheel-canvas {
+  border-color: #dc2626;
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.4), var(--shadow-2xl);
 }
 
 /* Responsive Design */
