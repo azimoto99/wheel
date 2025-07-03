@@ -17,7 +17,7 @@ function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [userName, setUserName] = useState('');
-  const [theme, setTheme] = useState('classic');
+  const [theme, setTheme] = useState('modern');
   const [spinHistory, setSpinHistory] = useState([]);
   
   useEffect(() => {
@@ -137,17 +137,17 @@ function App() {
   };
   
   const themes = [
-    { value: 'classic', label: 'Classic' },
-    { value: 'dark', label: 'Dark Mode' },
+    { value: 'modern', label: 'Modern' },
+    { value: 'dark', label: 'Dark' },
     { value: 'neon', label: 'Neon' },
-    { value: 'theater', label: 'Movie Theater' },
-    { value: 'retro', label: 'Retro' }
+    { value: 'ocean', label: 'Ocean' },
+    { value: 'sunset', label: 'Sunset' }
   ];
   
   return (
     <div className={`app ${theme}`}>
       <header className="app-header">
-        <h1>🎬 The Wheel</h1>
+        <h1>The Wheel</h1>
         <div className="header-controls">
           <select 
             value={theme} 

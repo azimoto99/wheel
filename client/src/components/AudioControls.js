@@ -157,9 +157,11 @@ const AudioControls = ({ socket, roomCode }) => {
   
   return (
     <div className="audio-controls">
-      <h3>🎵 Audio Controls</h3>
+      <h3>Audio Controls</h3>
       
-      <form onSubmit={handleMusicSubmit} className="music-form">
+      <div className="music-form">
+        <h4>Add Music</h4>
+        <form onSubmit={handleMusicSubmit}>
         <div className="url-input">
           <input
             type="url"
@@ -169,7 +171,8 @@ const AudioControls = ({ socket, roomCode }) => {
           />
           <button type="submit">Load</button>
         </div>
-      </form>
+        </form>
+      </div>
       
       {currentTrack && (
         <div className="current-track">
@@ -199,10 +202,10 @@ const AudioControls = ({ socket, roomCode }) => {
               />
               
               <div className="audio-controls-buttons">
-                <button onClick={handlePlayPause}>
+                <button onClick={handlePlayPause} className="audio-control-button">
                   {isPlaying ? '⏸️' : '▶️'}
                 </button>
-                <button onClick={handleStop}>⏹️</button>
+                <button onClick={handleStop} className="audio-control-button">⏹️</button>
               </div>
             </div>
           )}
@@ -210,8 +213,13 @@ const AudioControls = ({ socket, roomCode }) => {
       )}
       
       <div className="volume-controls">
+        <h4>Volume Controls</h4>
+        
         <div className="volume-control">
-          <label>Music Volume: {volume}%</label>
+          <div className="volume-header">
+            <span className="volume-label">🎵 Music Volume</span>
+            <span className="volume-value">{volume}%</span>
+          </div>
           <input
             type="range"
             min="0"
@@ -222,7 +230,18 @@ const AudioControls = ({ socket, roomCode }) => {
         </div>
         
         <div className="volume-control">
-          <label>Sound Effects: {soundEffectsVolume}%</label>
+          <div className="sound-effects-header">
+            <div className="volume-header">
+              <span className="volume-label">🔊 Sound Effects</span>
+              <span className="volume-value">{soundEffectsVolume}%</span>
+            </div>
+            <button
+              className={`toggle-button ${soundEffectsEnabled ? 'enabled' : 'disabled'}`}
+              onClick={() => setSoundEffectsEnabled(!soundEffectsEnabled)}
+            >
+              {soundEffectsEnabled ? '🔊' : '🔇'}
+            </button>
+          </div>
           <input
             type="range"
             min="0"
@@ -230,21 +249,15 @@ const AudioControls = ({ socket, roomCode }) => {
             value={soundEffectsVolume}
             onChange={(e) => setSoundEffectsVolume(Number(e.target.value))}
           />
-          <button
-            className={`toggle-button ${soundEffectsEnabled ? 'enabled' : 'disabled'}`}
-            onClick={() => setSoundEffectsEnabled(!soundEffectsEnabled)}
-          >
-            {soundEffectsEnabled ? '🔊' : '🔇'}
-          </button>
         </div>
       </div>
       
       <div className="sound-test">
         <h4>Test Sounds</h4>
         <div className="sound-test-buttons">
-          <button onClick={playSpinSound}>🌪️ Spin</button>
-          <button onClick={playTickSound}>⏰ Tick</button>
-          <button onClick={playVictorySound}>🎉 Victory</button>
+          <button onClick={playSpinSound} className="sound-test-button">🌪️ Spin</button>
+          <button onClick={playTickSound} className="sound-test-button">⏰ Tick</button>
+          <button onClick={playVictorySound} className="sound-test-button">🎉 Victory</button>
         </div>
       </div>
     </div>

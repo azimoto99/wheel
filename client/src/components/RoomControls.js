@@ -88,7 +88,8 @@ const RoomControls = ({
         <div className="room-info">
           <h3>{room.name}</h3>
           <div className="room-code">
-            <span>Room Code: <strong>{room.code}</strong></span>
+            <span className="room-code-label">Room Code:</span>
+            <span className="room-code-value">{room.code}</span>
             <button onClick={copyRoomCode} className="copy-button">
               Copy
             </button>
@@ -133,24 +134,26 @@ const RoomControls = ({
           onChange={(e) => onUserNameChange(e.target.value)}
           placeholder="Enter your name"
           maxLength={20}
+          className="input-field"
         />
       </div>
       
       <div className="room-actions">
         <div className="action-section">
-          <h4>Create New Room</h4>
-          <form onSubmit={handleCreateRoom}>
+          <h4 className="create">Create New Room</h4>
+          <form onSubmit={handleCreateRoom} className="action-form">
             <input
               type="text"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder="Room name (optional)"
               maxLength={30}
+              className="input-field"
             />
             <button
               type="submit"
               disabled={isCreating || !userName.trim()}
-              className="create-button"
+              className="primary-button create-button"
             >
               {isCreating ? 'Creating...' : 'Create Room'}
             </button>
@@ -162,19 +165,20 @@ const RoomControls = ({
         </div>
         
         <div className="action-section">
-          <h4>Join Existing Room</h4>
-          <form onSubmit={handleJoinRoom}>
+          <h4 className="join">Join Existing Room</h4>
+          <form onSubmit={handleJoinRoom} className="action-form">
             <input
               type="text"
               value={joinCode}
               onChange={handleJoinCodeChange}
               placeholder="Enter 4-digit code"
               maxLength={4}
+              className="input-field"
             />
             <button
               type="submit"
               disabled={isJoining || !userName.trim() || joinCode.length !== 4}
-              className="join-button"
+              className="primary-button join-button"
             >
               {isJoining ? 'Joining...' : 'Join Room'}
             </button>

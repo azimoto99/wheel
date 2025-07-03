@@ -90,7 +90,9 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
     <div className="movie-manager">
       <h3>Movie Manager</h3>
       
-      <form onSubmit={handleSubmit} className="add-movie-form">
+      <div className="add-movie-form">
+        <h4>Add New Movie</h4>
+        <form onSubmit={handleSubmit}>
         <div className="search-container">
           <input
             type="text"
@@ -100,6 +102,7 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
             onKeyDown={handleKeyDown}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
             disabled={disabled}
+            className="search-input"
           />
           
           {isLoading && <div className="loading-indicator">Searching...</div>}
@@ -138,13 +141,21 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
         >
           Add Movie
         </button>
-      </form>
+        </form>
+      </div>
       
       <div className="movie-list">
-        <h4>Movies in Wheel ({movies.length})</h4>
+        <h4>
+          <span className="movie-count">
+            Movies in Wheel
+            <span className="count-badge">{movies.length}</span>
+          </span>
+        </h4>
         
         {movies.length === 0 ? (
-          <p className="no-movies">No movies added yet. Start by searching for movies above!</p>
+          <div className="no-movies">
+            No movies added yet. Start by searching for movies above!
+          </div>
         ) : (
           <div className="movie-grid">
             {movies.map((movie) => (
