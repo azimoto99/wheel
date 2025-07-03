@@ -80,7 +80,17 @@ An interactive, multiplayer movie selection wheel that helps groups decide what 
 
 ### Running the Application
 
-**Development Mode:**
+**Development Mode (Recommended):**
+```bash
+# Terminal 1 - Start the backend server
+npm start
+
+# Terminal 2 - Start the React development server
+cd client
+npm start
+```
+
+**Or use the concurrent dev command:**
 ```bash
 npm run dev
 ```
@@ -92,7 +102,16 @@ npm run build
 npm start
 ```
 
-The app will be available at `http://localhost:3000` (development) or `http://localhost:3001` (production).
+The app will be available at:
+- Development: `http://localhost:3000` (React dev server with proxy to backend)
+- Production: `http://localhost:3001` (Express serves both frontend and backend)
+
+### Development Notes
+
+- **Backend server runs on port 3001** - handles Socket.io and API endpoints
+- **Frontend dev server runs on port 3000** - React app with hot reloading
+- **Proxy configured** - API calls from frontend automatically proxy to backend
+- **Socket.io connection** - Automatically detects production vs development URLs
 
 ## How to Use
 

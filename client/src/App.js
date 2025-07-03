@@ -5,7 +5,8 @@ import MovieManager from './components/MovieManager';
 import RoomControls from './components/RoomControls';
 import './App.css';
 
-const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = process.env.REACT_APP_SERVER_URL || 
+  (process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:3001');
 
 function App() {
   const [socket, setSocket] = useState(null);
