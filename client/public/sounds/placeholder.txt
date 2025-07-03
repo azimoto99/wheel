@@ -1,0 +1,11 @@
+Add your sound files here:
+- wheel-spin.mp3 (sound for when wheel starts spinning)
+- tick.mp3 (sound for wheel ticking)
+- victory.mp3 (sound for when wheel stops and selection is made)
+
+You can find free sound effects at:
+- freesound.org
+- opengameart.org
+- zapsplat.com (requires free account)
+
+Make sure the audio files are in MP3 format for best browser compatibility.
