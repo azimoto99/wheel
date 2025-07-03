@@ -7,6 +7,22 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
   const [spinDuration, setSpinDuration] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
   
+  // Get theme colors for Canvas (CSS variables don't work in Canvas)
+  const getThemeColors = () => {
+    switch(theme) {
+      case 'dark':
+        return { primary: '#38bdf8', hover: '#7dd3fc', empty: '#334155', border: '#475569' };
+      case 'neon':
+        return { primary: '#00ffff', hover: '#ff00ff', empty: '#1a0033', border: '#00ffff' };
+      case 'ocean':
+        return { primary: '#00aaff', hover: '#33bbff', empty: '#003355', border: '#66ccff' };
+      case 'sunset':
+        return { primary: '#e65100', hover: '#cc4500', empty: '#ffa726', border: '#ff8c42' };
+      default: // modern
+        return { primary: '#0ea5e9', hover: '#0284c7', empty: '#f8fafc', border: '#e2e8f0' };
+    }
+  };
+  
   const colors = {
     modern: ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'],
     dark: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#f97316', '#84cc16'],
@@ -34,12 +50,13 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     if (movies.length === 0) {
-      ctx.fillStyle = 'var(--bg-tertiary)';
+      const themeColors = getThemeColors();
+      ctx.fillStyle = themeColors.empty;
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
       ctx.fill();
       
-      ctx.strokeStyle = 'var(--border-color)';
+      ctx.strokeStyle = themeColors.border;
       ctx.lineWidth = 2;
       ctx.stroke();
       return;
@@ -93,10 +110,12 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
   };
   
   const drawPointer = (ctx, centerX, centerY, radius) => {
+    const themeColors = getThemeColors();
+    
     // Draw pointer at 3 o'clock position (right side)
     const gradient = ctx.createLinearGradient(centerX + radius + 5, centerY - 15, centerX + radius + 20, centerY + 15);
-    gradient.addColorStop(0, 'var(--accent-primary)');
-    gradient.addColorStop(1, 'var(--accent-hover)');
+    gradient.addColorStop(0, themeColors.primary);
+    gradient.addColorStop(1, themeColors.hover);
     
     ctx.fillStyle = gradient;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
@@ -134,7 +153,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'modern' }) 
     ctx.setLineDash([]); // Reset line dash
     
     // Add "WINNER" text near the pointer
-    ctx.fillStyle = 'var(--accent-primary)';
+    const themeColors = getThemeColors();
+    ctx.fillStyle = themeColors.primary;
     ctx.font = 'bold 12px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('WINNER', centerX + radius + 35, centerY - 20);
