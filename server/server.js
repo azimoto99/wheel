@@ -240,11 +240,12 @@ io.on('connection', (socket) => {
     }
     
     // Generate synchronized spin parameters on server
-    const minSpins = 5;
-    const maxSpins = 8;
-    const spins = minSpins + Math.random() * (maxSpins - minSpins);
+    // For longer durations, spin more times to keep it interesting
+    const baseSpins = 3;
+    const extraSpins = Math.min(duration / 2, 10); // More spins for longer durations
+    const totalSpins = baseSpins + extraSpins + Math.random() * 3;
     const randomEndAngle = Math.random() * 2 * Math.PI;
-    const totalRotation = (spins * 2 * Math.PI) + randomEndAngle;
+    const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
     
     // Calculate winning movie based on final rotation (including current wheel position)
     const finalWheelRotation = room.wheelRotation + totalRotation;
@@ -275,6 +276,9 @@ io.on('connection', (socket) => {
         room.currentSpin = null;
         // Update the room's wheel rotation to the final position
         room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
+        
+        // Emit victory sound event
+        io.to(roomCode).emit('wheel-stopped', { selectedMovie });
       }
     }, duration * 1000 + 1000); // Add 1 second buffer
     

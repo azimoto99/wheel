@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './AudioControls.css';
 
-const AudioControls = ({ socket, roomCode }) => {
+const AudioControls = ({ socket, roomCode, onRegisterTickSound }) => {
   const [musicUrl, setMusicUrl] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
@@ -43,6 +43,13 @@ const AudioControls = ({ socket, roomCode }) => {
       }
     });
   }, [soundEffectsVolume]);
+  
+  // Register the tick sound callback with the parent component
+  useEffect(() => {
+    if (onRegisterTickSound) {
+      onRegisterTickSound(() => playTickSound);
+    }
+  }, [onRegisterTickSound]);
   
   useEffect(() => {
     if (socket) {

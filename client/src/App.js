@@ -22,6 +22,7 @@ function App() {
   const [spinHistory, setSpinHistory] = useState([]);
   const [currentSpinData, setCurrentSpinData] = useState(null);
   const [wheelRotation, setWheelRotation] = useState(0);
+  const [tickSoundCallback, setTickSoundCallback] = useState(null);
   
   useEffect(() => {
     const newSocket = io(SERVER_URL);
@@ -208,6 +209,7 @@ function App() {
               <AudioControls
                 socket={socket}
                 roomCode={room?.code}
+                onRegisterTickSound={setTickSoundCallback}
               />
             </>
           )}
@@ -223,6 +225,7 @@ function App() {
               theme={theme}
               spinData={currentSpinData}
               initialRotation={wheelRotation}
+              onTickSound={tickSoundCallback}
             />
           ) : (
             <div className="welcome-screen">

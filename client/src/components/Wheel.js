@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './Wheel.css';
 
-const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', spinData, initialRotation = 0 }) => {
+const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', spinData, initialRotation = 0, onTickSound }) => {
   const canvasRef = useRef(null);
   const [rotation, setRotation] = useState(initialRotation);
   const [spinDuration, setSpinDuration] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
+  const tickIntervalRef = useRef(null);
   
   // Get theme colors for Canvas (CSS variables don't work in Canvas)
   const getThemeColors = () => {
@@ -262,11 +263,29 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     canvas.style.transition = `transform ${actualDuration}s cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
     canvas.style.transform = `rotate(${finalRotation}rad)`;
     
+    // Add tick sounds during spinning
+    if (movies.length > 0 && onTickSound) {
+      const anglePerSegment = (2 * Math.PI) / movies.length;
+      const tickInterval = (actualDuration * 1000) / (totalRotation / anglePerSegment);
+      const maxTickInterval = 200; // Don't tick too fast
+      const finalTickInterval = Math.max(tickInterval, maxTickInterval);
+      
+      tickIntervalRef.current = setInterval(() => {
+        onTickSound();
+      }, finalTickInterval);
+    }
+    
     // Complete the spin
     setTimeout(() => {
       canvas.style.transition = 'none';
       setRotation(finalRotation);
       setIsAnimating(false);
+      
+      // Clear tick sounds
+      if (tickIntervalRef.current) {
+        clearInterval(tickIntervalRef.current);
+        tickIntervalRef.current = null;
+      }
       
       // The selected movie is already determined by the server
       // No need to call onSpin here since the App component handles the result

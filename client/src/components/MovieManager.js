@@ -117,7 +117,7 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
                 <div
                   key={suggestion.id}
                   className="suggestion-item"
-                  onClick={() => handleSuggestionClick(suggestion)}
+                  onClick={() => handleAddMovie(suggestion)}
                 >
                   {suggestion.poster && (
                     <img
