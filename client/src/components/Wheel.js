@@ -178,10 +178,20 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       // Adjust text length based on segment size
       const maxTextLength = Math.max(8, Math.floor(20 * segmentRatio));
       const text = movie.title.length > maxTextLength ? movie.title.substring(0, maxTextLength) + '...' : movie.title;
+      
+      // Draw black outline for title text
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.strokeText(text, radius * 0.7, -2);
       ctx.fillText(text, radius * 0.7, -2);
       
       if (movie.year && segmentRatio > 0.3) { // Only show year if segment is large enough
         ctx.font = `${Math.max(8, baseFontSize - 2)}px Inter, sans-serif`;
+        
+        // Draw black outline for year text
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeText(`(${movie.year})`, radius * 0.7, 12);
         ctx.fillText(`(${movie.year})`, radius * 0.7, 12);
       }
       
@@ -190,6 +200,11 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
         ctx.font = `bold ${Math.max(8, baseFontSize - 2)}px Inter, sans-serif`;
         ctx.fillStyle = movie.votes > 0 ? '#10b981' : '#dc2626';
         const voteText = movie.votes > 0 ? `+${movie.votes}` : `${movie.votes}`;
+        
+        // Draw black outline for vote text
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeText(voteText, radius * 0.7, segmentRatio > 0.3 ? 25 : 12);
         ctx.fillText(voteText, radius * 0.7, segmentRatio > 0.3 ? 25 : 12);
       }
       
@@ -228,14 +243,18 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     ctx.shadowOffsetY = 2;
     
     // Draw the main arrow body - positioned to point at 3 o'clock from outside the wheel
+    // Arrow tip should be just outside the wheel edge at 3 o'clock
+    const arrowTipX = centerX + radius + 2;
+    const arrowTipY = centerY;
+    
     ctx.beginPath();
-    ctx.moveTo(centerX + radius + 5, centerY); // Arrow tip (points to wheel edge)
-    ctx.lineTo(centerX + radius + 25, centerY - 15); // Top of arrow
-    ctx.lineTo(centerX + radius + 25, centerY - 5); // Top of shaft
-    ctx.lineTo(centerX + radius + 40, centerY - 5); // Right of shaft
-    ctx.lineTo(centerX + radius + 40, centerY + 5); // Right of shaft bottom
-    ctx.lineTo(centerX + radius + 25, centerY + 5); // Bottom of shaft
-    ctx.lineTo(centerX + radius + 25, centerY + 15); // Bottom of arrow
+    ctx.moveTo(arrowTipX, arrowTipY); // Arrow tip (points to wheel edge)
+    ctx.lineTo(arrowTipX + 20, arrowTipY - 15); // Top of arrow
+    ctx.lineTo(arrowTipX + 20, arrowTipY - 5); // Top of shaft
+    ctx.lineTo(arrowTipX + 35, arrowTipY - 5); // Right of shaft
+    ctx.lineTo(arrowTipX + 35, arrowTipY + 5); // Right of shaft bottom
+    ctx.lineTo(arrowTipX + 20, arrowTipY + 5); // Bottom of shaft
+    ctx.lineTo(arrowTipX + 20, arrowTipY + 15); // Bottom of arrow
     ctx.closePath();
     ctx.fill();
     
@@ -247,7 +266,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     // Add a small circle at the base of the arrow for attachment point
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(centerX + radius + 40, centerY, 6, 0, 2 * Math.PI);
+    ctx.arc(arrowTipX + 35, arrowTipY, 6, 0, 2 * Math.PI);
     ctx.fill();
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 1;
