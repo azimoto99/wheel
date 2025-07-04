@@ -8,6 +8,8 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importText, setImportText] = useState('');
   
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
@@ -89,6 +91,56 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
       setShowSuggestions(false);
     }
   };
+
+  const handleImportMovies = () => {
+    if (!importText.trim()) return;
+    
+    // Parse the import text - support both newline and comma separated
+    let movieTitles = [];
+    
+    // First try newline separation (wheelofnames.com format)
+    if (importText.includes('\n')) {
+      movieTitles = importText.split('\n').map(title => title.trim()).filter(title => title.length > 0);
+    } else {
+      // Fallback to comma separation
+      movieTitles = importText.split(',').map(title => title.trim()).filter(title => title.length > 0);
+    }
+    
+    // Add each movie to the wheel
+    let addedCount = 0;
+    let skippedCount = 0;
+    
+    movieTitles.forEach(title => {
+      // Check if movie already exists
+      const isDuplicate = movies.some(existingMovie => 
+        existingMovie.title.toLowerCase() === title.toLowerCase()
+      );
+      
+      if (!isDuplicate) {
+        const movie = {
+          id: Date.now() + Math.random(), // Ensure unique IDs
+          title: title,
+          year: null,
+          poster: null
+        };
+        onAddMovie(movie);
+        addedCount++;
+      } else {
+        skippedCount++;
+      }
+    });
+    
+    // Show feedback
+    let message = `Added ${addedCount} movies to the wheel.`;
+    if (skippedCount > 0) {
+      message += ` Skipped ${skippedCount} duplicates.`;
+    }
+    alert(message);
+    
+    // Reset form
+    setImportText('');
+    setShowImportDialog(false);
+  };
   
   return (
     <div className="movie-manager">
@@ -146,6 +198,14 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
           Add Movie
         </button>
         </form>
+        
+        <button
+          onClick={() => setShowImportDialog(true)}
+          disabled={disabled}
+          className="import-button"
+        >
+          Import List
+        </button>
       </div>
       
       <div className="movie-list">
@@ -191,6 +251,50 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
           </div>
         )}
       </div>
+      
+      {/* Import Dialog */}
+      {showImportDialog && (
+        <div className="import-modal-overlay">
+          <div className="import-modal">
+            <h3>Import Movie List</h3>
+            <p>Paste your movie list here. Each movie should be on a new line (like wheelofnames.com) or separated by commas.</p>
+            
+            <textarea
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder={`The Shawshank Redemption
+The Godfather
+The Dark Knight
+Pulp Fiction
+Forrest Gump
+
+Or comma-separated:
+Movie 1, Movie 2, Movie 3`}
+              rows="10"
+              className="import-textarea"
+            />
+            
+            <div className="import-actions">
+              <button
+                onClick={handleImportMovies}
+                disabled={!importText.trim()}
+                className="import-confirm-button"
+              >
+                Import Movies
+              </button>
+              <button
+                onClick={() => {
+                  setShowImportDialog(false);
+                  setImportText('');
+                }}
+                className="import-cancel-button"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

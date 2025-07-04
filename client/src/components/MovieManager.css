@@ -181,8 +181,7 @@
   font-size: 0.75rem;
 }
 
-.add-button {
-  width: 100%;
+.add-button, .import-button {
   padding: var(--space-3) var(--space-4);
   background: var(--accent-primary);
   color: var(--bg-secondary);
@@ -199,7 +198,17 @@
   overflow: hidden;
 }
 
-.add-button::before {
+.add-button {
+  width: 100%;
+  margin-bottom: var(--space-3);
+}
+
+.import-button {
+  background: var(--success-color);
+  width: 100%;
+}
+
+.add-button::before, .import-button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -210,7 +219,7 @@
   transition: left var(--transition-normal);
 }
 
-.add-button:hover:not(:disabled)::before {
+.add-button:hover:not(:disabled)::before, .import-button:hover:not(:disabled)::before {
   left: 100%;
 }
 
@@ -220,14 +229,20 @@
   box-shadow: var(--shadow-lg);
 }
 
-.add-button:disabled {
+.import-button:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.add-button:disabled, .import-button:disabled {
   background: var(--text-muted);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.add-button:disabled::before {
+.add-button:disabled::before, .import-button:disabled::before {
   display: none;
 }
 
@@ -520,5 +535,149 @@
   .count-badge {
     font-size: 0.7rem;
     padding: 2px var(--space-1);
+  }
+}
+
+/* Import Modal Styles */
+.import-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: var(--space-4);
+  backdrop-filter: blur(4px);
+}
+
+.import-modal {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-2xl);
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+.import-modal h3 {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.import-modal h3::before {
+  content: '📥';
+  font-size: 1.5rem;
+}
+
+.import-modal p {
+  margin: 0 0 var(--space-6) 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.import-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: 'Inter', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.import-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-secondary);
+  background: var(--bg-secondary);
+}
+
+.import-textarea::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.import-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.import-confirm-button, .import-cancel-button {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.import-confirm-button {
+  background: var(--success-color);
+  color: white;
+}
+
+.import-confirm-button:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.import-confirm-button:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.import-cancel-button {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.import-cancel-button:hover {
+  background: var(--border-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 768px) {
+  .import-modal {
+    padding: var(--space-6);
+    margin: var(--space-4);
+  }
+  
+  .import-textarea {
+    min-height: 150px;
+    font-size: 0.8rem;
+  }
+  
+  .import-actions {
+    flex-direction: column;
   }
 }
