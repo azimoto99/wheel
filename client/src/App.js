@@ -23,6 +23,8 @@ function App() {
   const [currentSpinData, setCurrentSpinData] = useState(null);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [tickSoundCallback, setTickSoundCallback] = useState(null);
+  const [userVetos, setUserVetos] = useState({});
+  const [eliminationRounds, setEliminationRounds] = useState(0);
   
   useEffect(() => {
     const newSocket = io(SERVER_URL);
@@ -43,6 +45,8 @@ function App() {
       setUsers(roomData.users);
       setMovies(roomData.movies);
       setWheelRotation(roomData.wheelRotation || 0);
+      setUserVetos(roomData.userVetos || {});
+      setEliminationRounds(roomData.eliminationRounds || 0);
       console.log('Joined room:', roomData);
     });
     
@@ -64,6 +68,38 @@ function App() {
     newSocket.on('movie-removed', ({ movieId }) => {
       setMovies(prev => prev.filter(m => m.id !== movieId));
       console.log('Movie removed:', movieId);
+    });
+    
+    newSocket.on('movie-vetoed', ({ movieId, vetoedBy, userVetos: updatedVetos }) => {
+      setMovies(prev => prev.map(movie => 
+        movie.id === movieId ? { ...movie, vetoed: true } : movie
+      ));
+      setUserVetos(updatedVetos);
+      console.log('Movie vetoed:', movieId, 'by', vetoedBy);
+    });
+    
+    newSocket.on('movie-vote-updated', ({ movieId, votes }) => {
+      setMovies(prev => prev.map(movie => 
+        movie.id === movieId ? { ...movie, votes } : movie
+      ));
+    });
+    
+    newSocket.on('elimination-started', ({ round, startedBy, availableMovies }) => {
+      setEliminationRounds(round);
+      console.log('Elimination round', round, 'started by', startedBy, 'with', availableMovies, 'movies');
+    });
+    
+    newSocket.on('elimination-spin', ({ round, eliminatingMovie, remainingMovies }) => {
+      console.log('Elimination spin round', round, '- eliminating:', eliminatingMovie, 'remaining:', remainingMovies);
+    });
+    
+    newSocket.on('movie-eliminated', ({ movieId, movieTitle, round }) => {
+      setMovies(prev => prev.filter(m => m.id !== movieId));
+      console.log('Movie eliminated in round', round, ':', movieTitle);
+    });
+    
+    newSocket.on('elimination-complete', ({ finalMovies, round }) => {
+      console.log('Elimination round', round, 'complete! Final movies:', finalMovies);
     });
     
     newSocket.on('wheel-spinning', (spinData) => {
@@ -204,6 +240,10 @@ function App() {
                 onAddMovie={handleAddMovie}
                 onRemoveMovie={handleRemoveMovie}
                 disabled={isSpinning}
+                socket={socket}
+                userVetos={userVetos}
+                currentUserId={socket?.id}
+                eliminationRounds={eliminationRounds}
               />
               
               <AudioControls

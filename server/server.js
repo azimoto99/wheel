@@ -26,6 +26,40 @@ function generateRoomCode() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
+function selectWeightedMovie(availableMovies, finalWheelRotation, totalMovieCount) {
+  // Calculate base probability for each movie
+  const baseWeight = 1;
+  const voteMultiplier = 0.3; // Each vote adds 30% to base probability
+  
+  // Calculate weights for all available movies
+  const weightedMovies = availableMovies.map(movie => ({
+    ...movie,
+    weight: Math.max(0.1, baseWeight + (movie.votes * voteMultiplier)) // Minimum 10% chance
+  }));
+  
+  // Total weight for normalization
+  const totalWeight = weightedMovies.reduce((sum, movie) => sum + movie.weight, 0);
+  
+  // Use wheel rotation to determine selection, but bias towards higher weighted movies
+  const normalizedRotation = ((finalWheelRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+  const anglePerSegment = (2 * Math.PI) / totalMovieCount;
+  const baseIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % totalMovieCount;
+  
+  // Create a random selection biased by weights
+  const random = Math.random() * totalWeight;
+  let weightSum = 0;
+  
+  for (const movie of weightedMovies) {
+    weightSum += movie.weight;
+    if (random <= weightSum) {
+      return movie;
+    }
+  }
+  
+  // Fallback to last available movie
+  return weightedMovies[weightedMovies.length - 1];
+}
+
 app.get('/api/rooms/:code', (req, res) => {
   const { code } = req.params;
   const room = rooms.get(code);
@@ -59,7 +93,10 @@ app.post('/api/rooms/create', (req, res) => {
     currentMusic: null,
     currentSpin: null,
     wheelRotation: 0,
-    createdAt: new Date()
+    createdAt: new Date(),
+    userVetos: new Map(), // Track vetos per user
+    movieVotes: new Map(), // Track votes per movie
+    eliminationRounds: 0
   };
   
   rooms.set(code, room);
@@ -155,7 +192,10 @@ io.on('connection', (socket) => {
       movies: room.movies,
       currentMusic: room.currentMusic,
       currentSpin: room.currentSpin,
-      wheelRotation: room.wheelRotation
+      wheelRotation: room.wheelRotation,
+      userVetos: Object.fromEntries(room.userVetos),
+      movieVotes: Object.fromEntries(room.movieVotes),
+      eliminationRounds: room.eliminationRounds
     });
     
     // If there's an ongoing spin, sync the new user with it
@@ -199,7 +239,9 @@ io.on('connection', (socket) => {
       title: movie.title,
       year: movie.year,
       poster: movie.poster,
-      addedBy: room.users.get(socket.id)?.name || 'Unknown'
+      addedBy: room.users.get(socket.id)?.name || 'Unknown',
+      votes: 0,
+      vetoed: false
     };
     
     room.movies.push(newMovie);
@@ -220,6 +262,9 @@ io.on('connection', (socket) => {
     
     room.movies = room.movies.filter(movie => movie.id !== movieId);
     
+    // Clean up votes for removed movie
+    room.movieVotes.delete(movieId);
+    
     io.to(roomCode).emit('movie-removed', { movieId });
     
     console.log(`Movie removed from room ${roomCode}:`, movieId);
@@ -234,8 +279,10 @@ io.on('connection', (socket) => {
       return;
     }
     
-    if (room.movies.length === 0) {
-      socket.emit('error', { message: 'No movies in wheel' });
+    const availableMovies = room.movies.filter(movie => !movie.vetoed);
+    
+    if (availableMovies.length === 0) {
+      socket.emit('error', { message: 'No available movies in wheel (all may be vetoed)' });
       return;
     }
     
@@ -247,12 +294,8 @@ io.on('connection', (socket) => {
     const randomEndAngle = Math.random() * 2 * Math.PI;
     const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
     
-    // Calculate winning movie based on final rotation (including current wheel position)
-    const finalWheelRotation = room.wheelRotation + totalRotation;
-    const normalizedRotation = ((finalWheelRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-    const anglePerSegment = (2 * Math.PI) / room.movies.length;
-    const winningIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % room.movies.length;
-    const selectedMovie = room.movies[winningIndex];
+    // Calculate winning movie with weighted probability based on votes
+    const selectedMovie = selectWeightedMovie(availableMovies, room.wheelRotation + totalRotation, room.movies.length);
     
     // Create synchronized spin data with timestamp
     const spinData = {
@@ -300,6 +343,211 @@ io.on('connection', (socket) => {
     
     console.log(`Music updated in room ${roomCode}`);
   });
+
+  socket.on('veto-movie', ({ movieId }) => {
+    const roomCode = userRooms.get(socket.id);
+    const room = rooms.get(roomCode);
+    
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+    
+    const userId = socket.id;
+    const hasVetoLeft = !room.userVetos.get(userId);
+    
+    if (!hasVetoLeft) {
+      socket.emit('error', { message: 'You have already used your veto for this session' });
+      return;
+    }
+    
+    const movie = room.movies.find(m => m.id === movieId);
+    if (!movie) {
+      socket.emit('error', { message: 'Movie not found' });
+      return;
+    }
+    
+    if (movie.vetoed) {
+      socket.emit('error', { message: 'Movie has already been vetoed' });
+      return;
+    }
+    
+    // Use the veto
+    room.userVetos.set(userId, true);
+    movie.vetoed = true;
+    
+    const userName = room.users.get(userId)?.name || 'Unknown';
+    
+    io.to(roomCode).emit('movie-vetoed', { 
+      movieId, 
+      vetoedBy: userName,
+      userVetos: Object.fromEntries(room.userVetos)
+    });
+    
+    console.log(`Movie vetoed in room ${roomCode} by ${userName}: ${movie.title}`);
+  });
+
+  socket.on('vote-movie', ({ movieId, voteType }) => {
+    const roomCode = userRooms.get(socket.id);
+    const room = rooms.get(roomCode);
+    
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+    
+    const userId = socket.id;
+    const movie = room.movies.find(m => m.id === movieId);
+    
+    if (!movie) {
+      socket.emit('error', { message: 'Movie not found' });
+      return;
+    }
+    
+    if (movie.vetoed) {
+      socket.emit('error', { message: 'Cannot vote on vetoed movie' });
+      return;
+    }
+    
+    // Get or create vote map for this movie
+    if (!room.movieVotes.has(movieId)) {
+      room.movieVotes.set(movieId, new Map());
+    }
+    
+    const movieVotes = room.movieVotes.get(movieId);
+    const currentVote = movieVotes.get(userId);
+    
+    // Remove previous vote if exists
+    if (currentVote) {
+      movie.votes += (currentVote === 'up' ? -1 : 1);
+    }
+    
+    // Add new vote if different from current
+    if (voteType !== currentVote) {
+      movieVotes.set(userId, voteType);
+      movie.votes += (voteType === 'up' ? 1 : -1);
+    } else {
+      // Remove vote if clicking same button
+      movieVotes.delete(userId);
+    }
+    
+    const userName = room.users.get(userId)?.name || 'Unknown';
+    
+    io.to(roomCode).emit('movie-vote-updated', { 
+      movieId, 
+      votes: movie.votes,
+      userVote: movieVotes.get(userId) || null,
+      votedBy: userName
+    });
+    
+    console.log(`Movie vote updated in room ${roomCode} by ${userName}: ${movie.title} (${movie.votes} votes)`);
+  });
+
+  socket.on('start-elimination', () => {
+    const roomCode = userRooms.get(socket.id);
+    const room = rooms.get(roomCode);
+    
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+    
+    const availableMovies = room.movies.filter(movie => !movie.vetoed);
+    
+    if (availableMovies.length <= 3) {
+      socket.emit('error', { message: 'Need at least 4 movies for elimination rounds' });
+      return;
+    }
+    
+    room.eliminationRounds++;
+    const userName = room.users.get(socket.id)?.name || 'Unknown';
+    
+    io.to(roomCode).emit('elimination-started', { 
+      round: room.eliminationRounds,
+      startedBy: userName,
+      availableMovies: availableMovies.length
+    });
+    
+    // Start automatic elimination spins
+    performEliminationRound(room, roomCode, availableMovies);
+    
+    console.log(`Elimination round ${room.eliminationRounds} started in room ${roomCode} by ${userName}`);
+  });
+
+  function performEliminationRound(room, roomCode, availableMovies) {
+    if (availableMovies.length <= 3) {
+      // Elimination complete
+      io.to(roomCode).emit('elimination-complete', {
+        finalMovies: availableMovies.map(m => m.title),
+        round: room.eliminationRounds
+      });
+      return;
+    }
+    
+    // Perform elimination spin with shorter duration
+    const duration = 3; // Shorter spins for elimination
+    const baseSpins = 2;
+    const totalSpins = baseSpins + Math.random() * 2;
+    const randomEndAngle = Math.random() * 2 * Math.PI;
+    const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
+    
+    // Select a movie to eliminate (lowest voted or random)
+    const sortedByVotes = availableMovies.sort((a, b) => (a.votes || 0) - (b.votes || 0));
+    const lowestVoteCount = sortedByVotes[0].votes || 0;
+    const candidatesForElimination = sortedByVotes.filter(m => (m.votes || 0) === lowestVoteCount);
+    const movieToEliminate = candidatesForElimination[Math.floor(Math.random() * candidatesForElimination.length)];
+    
+    const spinData = {
+      duration,
+      totalRotation,
+      selectedMovie: movieToEliminate,
+      spinnedBy: 'Elimination System',
+      startTime: Date.now(),
+      timestamp: Date.now(),
+      eliminationRound: true
+    };
+    
+    room.currentSpin = spinData;
+    
+    io.to(roomCode).emit('wheel-spinning', spinData);
+    io.to(roomCode).emit('elimination-spin', {
+      round: room.eliminationRounds,
+      eliminatingMovie: movieToEliminate.title,
+      remainingMovies: availableMovies.length - 1
+    });
+    
+    // Remove the movie after spin completes
+    setTimeout(() => {
+      if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
+        room.currentSpin = null;
+        room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
+        
+        // Remove the eliminated movie
+        room.movies = room.movies.filter(m => m.id !== movieToEliminate.id);
+        
+        io.to(roomCode).emit('movie-eliminated', { 
+          movieId: movieToEliminate.id,
+          movieTitle: movieToEliminate.title,
+          round: room.eliminationRounds
+        });
+        
+        io.to(roomCode).emit('wheel-stopped', { selectedMovie: movieToEliminate });
+        
+        // Continue elimination if more movies need to be removed
+        const newAvailableMovies = room.movies.filter(movie => !movie.vetoed);
+        if (newAvailableMovies.length > 3) {
+          setTimeout(() => {
+            performEliminationRound(room, roomCode, newAvailableMovies);
+          }, 2000); // Wait 2 seconds between elimination spins
+        } else {
+          io.to(roomCode).emit('elimination-complete', {
+            finalMovies: newAvailableMovies.map(m => m.title),
+            round: room.eliminationRounds
+          });
+        }
+      }
+    }, duration * 1000 + 1000);
+  }
   
   socket.on('disconnect', () => {
     const roomCode = userRooms.get(socket.id);

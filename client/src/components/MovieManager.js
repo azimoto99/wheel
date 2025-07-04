@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './MovieManager.css';
 
-const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) => {
+const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false, socket, userVetos, currentUserId, eliminationRounds }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -10,6 +10,76 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importText, setImportText] = useState('');
+  const [movieVotes, setMovieVotes] = useState({});
+  const [userVoteHistory, setUserVoteHistory] = useState({});
+  
+  useEffect(() => {
+    if (socket) {
+      socket.on('movie-vote-updated', ({ movieId, votes, userVote }) => {
+        setMovieVotes(prev => ({
+          ...prev,
+          [movieId]: votes
+        }));
+        
+        if (userVote !== null) {
+          setUserVoteHistory(prev => ({
+            ...prev,
+            [movieId]: userVote
+          }));
+        } else {
+          setUserVoteHistory(prev => {
+            const newHistory = { ...prev };
+            delete newHistory[movieId];
+            return newHistory;
+          });
+        }
+      });
+      
+      socket.on('movie-vetoed', ({ movieId }) => {
+        // Movie vetoed, no additional state needed as it's handled in movies array
+      });
+      
+      return () => {
+        socket.off('movie-vote-updated');
+        socket.off('movie-vetoed');
+      };
+    }
+  }, [socket]);
+  
+  const handleVoteMovie = (movieId, voteType) => {
+    if (socket && !disabled) {
+      socket.emit('vote-movie', { movieId, voteType });
+    }
+  };
+  
+  const handleVetoMovie = (movieId) => {
+    if (socket && !disabled) {
+      const userHasVeto = !userVetos[currentUserId];
+      if (userHasVeto) {
+        const confirmVeto = window.confirm('Are you sure you want to veto this movie? You can only veto once per session.');
+        if (confirmVeto) {
+          socket.emit('veto-movie', { movieId });
+        }
+      } else {
+        alert('You have already used your veto for this session.');
+      }
+    }
+  };
+  
+  const handleStartElimination = () => {
+    if (socket && !disabled) {
+      const availableMovies = movies.filter(movie => !movie.vetoed);
+      if (availableMovies.length <= 3) {
+        alert('Need at least 4 movies for elimination rounds');
+        return;
+      }
+      
+      const confirmElimination = window.confirm('Start elimination rounds? This will spin multiple times to narrow down the choices.');
+      if (confirmElimination) {
+        socket.emit('start-elimination');
+      }
+    }
+  };
   
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
@@ -199,13 +269,26 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
         </button>
         </form>
         
-        <button
-          onClick={() => setShowImportDialog(true)}
-          disabled={disabled}
-          className="import-button"
-        >
-          Import List
-        </button>
+        <div className="action-buttons">
+          <button
+            onClick={() => setShowImportDialog(true)}
+            disabled={disabled}
+            className="import-button"
+          >
+            Import List
+          </button>
+          
+          {movies.filter(m => !m.vetoed).length > 3 && (
+            <button
+              onClick={handleStartElimination}
+              disabled={disabled}
+              className="elimination-button"
+              title="Start elimination rounds to narrow down choices"
+            >
+              🎯 Elimination
+            </button>
+          )}
+        </div>
       </div>
       
       <div className="movie-list">
@@ -216,6 +299,26 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
           </span>
         </h4>
         
+        {(eliminationRounds > 0 || Object.keys(userVetos).length > 0) && (
+          <div className="session-info">
+            {eliminationRounds > 0 && (
+              <div className="elimination-info">
+                🎯 Elimination Rounds: {eliminationRounds}
+              </div>
+            )}
+            
+            <div className="veto-info">
+              🚫 Veto Status: {userVetos[currentUserId] ? 'Used' : 'Available'}
+            </div>
+            
+            {movies.filter(m => m.vetoed).length > 0 && (
+              <div className="vetoed-count">
+                ❌ Vetoed: {movies.filter(m => m.vetoed).length}
+              </div>
+            )}
+          </div>
+        )}
+        
         {movies.length === 0 ? (
           <div className="no-movies">
             No movies added yet. Start by searching for movies above!
@@ -223,7 +326,7 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
         ) : (
           <div className="movie-grid">
             {movies.map((movie) => (
-              <div key={movie.id} className="movie-item">
+              <div key={movie.id} className={`movie-item ${movie.vetoed ? 'vetoed' : ''}`}>
                 {movie.poster && (
                   <img
                     src={movie.poster}
@@ -237,7 +340,44 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false }) =
                   {movie.addedBy && (
                     <p className="added-by">Added by {movie.addedBy}</p>
                   )}
+                  {movie.vetoed && (
+                    <p className="vetoed-status">❌ VETOED</p>
+                  )}
                 </div>
+                
+                {!movie.vetoed && (
+                  <div className="movie-actions">
+                    <div className="vote-section">
+                      <button
+                        onClick={() => handleVoteMovie(movie.id, 'up')}
+                        className={`vote-button up ${userVoteHistory[movie.id] === 'up' ? 'active' : ''}`}
+                        disabled={disabled}
+                        title="Vote up"
+                      >
+                        👍
+                      </button>
+                      <span className="vote-count">{movie.votes || 0}</span>
+                      <button
+                        onClick={() => handleVoteMovie(movie.id, 'down')}
+                        className={`vote-button down ${userVoteHistory[movie.id] === 'down' ? 'active' : ''}`}
+                        disabled={disabled}
+                        title="Vote down"
+                      >
+                        👎
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={() => handleVetoMovie(movie.id)}
+                      className="veto-button"
+                      disabled={disabled || userVetos[currentUserId]}
+                      title={userVetos[currentUserId] ? "Already used veto" : "Veto this movie"}
+                    >
+                      🚫
+                    </button>
+                  </div>
+                )}
+                
                 <button
                   onClick={() => onRemoveMovie(movie.id)}
                   className="remove-button"

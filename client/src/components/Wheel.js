@@ -75,7 +75,10 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if (movies.length === 0) {
+    // Filter out vetoed movies for display
+    const availableMovies = movies.filter(movie => !movie.vetoed);
+    
+    if (availableMovies.length === 0) {
       const themeColors = getThemeColors();
       ctx.fillStyle = themeColors.empty;
       ctx.beginPath();
@@ -85,13 +88,21 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       ctx.strokeStyle = themeColors.border;
       ctx.lineWidth = 2;
       ctx.stroke();
+      
+      // Show message if all movies are vetoed
+      if (movies.length > 0) {
+        ctx.fillStyle = themeColors.border;
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('All movies vetoed', centerX, centerY);
+      }
       return;
     }
     
-    const anglePerSegment = (2 * Math.PI) / movies.length;
+    const anglePerSegment = (2 * Math.PI) / availableMovies.length;
     const themeColors = colors[theme] || colors.rosebud;
     
-    movies.forEach((movie, index) => {
+    availableMovies.forEach((movie, index) => {
       const startAngle = index * anglePerSegment;
       const endAngle = (index + 1) * anglePerSegment;
       
@@ -117,11 +128,19 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       ctx.shadowOffsetY = 1;
       
       const text = movie.title.length > 20 ? movie.title.substring(0, 20) + '...' : movie.title;
-      ctx.fillText(text, radius * 0.7, 5);
+      ctx.fillText(text, radius * 0.7, -2);
       
       if (movie.year) {
         ctx.font = '10px Inter, sans-serif';
-        ctx.fillText(`(${movie.year})`, radius * 0.7, 18);
+        ctx.fillText(`(${movie.year})`, radius * 0.7, 12);
+      }
+      
+      // Show vote count if movie has votes
+      if (movie.votes && movie.votes !== 0) {
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.fillStyle = movie.votes > 0 ? '#10b981' : '#dc2626';
+        const voteText = movie.votes > 0 ? `+${movie.votes}` : `${movie.votes}`;
+        ctx.fillText(voteText, radius * 0.7, 25);
       }
       
       ctx.restore();
