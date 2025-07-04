@@ -98,18 +98,27 @@ function App() {
       console.log('Movie eliminated in round', round, ':', movieTitle);
     });
     
-    newSocket.on('elimination-complete', ({ finalMovies, round }) => {
-      console.log('Elimination round', round, 'complete! Final movies:', finalMovies);
+    newSocket.on('elimination-complete', ({ eliminatedMovies, currentRound, totalRounds, moviesRemaining }) => {
+      console.log(`Elimination round ${currentRound}/${totalRounds} complete! Movies eliminated:`, eliminatedMovies, `(${moviesRemaining} remaining)`);
+      
+      // Update movies to show elimination status
+      setMovies(prev => prev.map(movie => 
+        eliminatedMovies.includes(movie.id) ? { ...movie, eliminated: true } : movie
+      ));
     });
     
     newSocket.on('wheel-spinning', (spinData) => {
-      const { duration, selectedMovie: spinResult, spinnedBy, syncMode, totalRotation } = spinData;
+      const { duration, selectedMovie: spinResult, spinnedBy, syncMode, totalRotation, isEliminationRound, currentRound, totalRounds } = spinData;
       
       setIsSpinning(true);
       setCurrentSpinData({ ...spinData, timestamp: Date.now() }); // Add timestamp for React key
       setSelectedMovie(null); // Clear previous selection
       
-      console.log(`Wheel spun by ${spinnedBy}, selected: ${spinResult.title}${syncMode ? ' (synced)' : ''}`);
+      if (isEliminationRound) {
+        console.log(`Elimination round ${currentRound}/${totalRounds} spun by ${spinnedBy}${syncMode ? ' (synced)' : ''}`);
+      } else {
+        console.log(`Wheel spun by ${spinnedBy}, selected: ${spinResult?.title}${syncMode ? ' (synced)' : ''}`);
+      }
       
       const actualDuration = syncMode && spinData.remainingTime ? 
         spinData.remainingTime : duration * 1000;
@@ -183,15 +192,15 @@ function App() {
     socket.emit('remove-movie', { movieId });
   };
   
-  const handleSpinWheel = (duration, selectedMovie, isSpinRequest = false) => {
+  const handleSpinWheel = (duration, eliminationRounds, isSpinRequest = false) => {
     if (movies.length === 0) return;
     
     if (isSpinRequest) {
       // This is a request to start spinning - emit to server for coordination
-      socket.emit('start-spin', { duration });
+      socket.emit('start-spin', { duration, eliminationRounds });
     } else {
       // This is the old behavior - keep for backward compatibility if needed
-      socket.emit('spin-wheel', { duration, selectedMovie });
+      socket.emit('spin-wheel', { duration, selectedMovie: eliminationRounds });
     }
   };
   

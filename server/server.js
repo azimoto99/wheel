@@ -173,6 +173,146 @@ app.get('/api/movies/search', async (req, res) => {
   }
 });
 
+// Helper function to perform a single spin
+function performSingleSpin(room, roomCode, socket, duration, availableMovies) {
+  // Generate synchronized spin parameters on server
+  const baseSpins = 3;
+  const extraSpins = Math.min(duration / 2, 10);
+  const totalSpins = baseSpins + extraSpins + Math.random() * 3;
+  const randomEndAngle = Math.random() * 2 * Math.PI;
+  const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
+  
+  // Calculate winning movie with weighted probability based on votes
+  const selectedMovie = selectWeightedMovie(availableMovies, room.wheelRotation + totalRotation, room.movies.length);
+  
+  // Create synchronized spin data with timestamp
+  const spinData = {
+    duration,
+    totalRotation,
+    selectedMovie,
+    spinnedBy: room.users.get(socket.id)?.name || 'Unknown',
+    startTime: Date.now(),
+    timestamp: Date.now(),
+    isFinalSpin: true
+  };
+  
+  // Store current spin in room for late joiners
+  room.currentSpin = spinData;
+  
+  // Broadcast to all clients in room
+  io.to(roomCode).emit('wheel-spinning', spinData);
+  
+  // Clear the spin data after it completes
+  setTimeout(() => {
+    if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
+      room.currentSpin = null;
+      room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
+      io.to(roomCode).emit('wheel-stopped', { selectedMovie });
+    }
+  }, duration * 1000 + 1000);
+}
+
+// Helper function to perform elimination rounds
+function performEliminationRounds(room, roomCode, socket, duration, eliminationRounds, availableMovies) {
+  if (!room.eliminationState) {
+    room.eliminationState = {
+      currentRound: 0,
+      totalRounds: eliminationRounds,
+      eliminatedMovies: []
+    };
+  }
+  
+  const currentRound = room.eliminationState.currentRound + 1;
+  const isLastRound = currentRound === eliminationRounds;
+  
+  // Calculate how many movies to eliminate this round
+  const totalMoviesLeft = availableMovies.length - room.eliminationState.eliminatedMovies.length;
+  const moviesPerRound = Math.max(1, Math.floor((totalMoviesLeft - 1) / (eliminationRounds - currentRound + 1)));
+  
+  // Generate spin parameters
+  const baseSpins = 2;
+  const extraSpins = Math.min(duration / 3, 5);
+  const totalSpins = baseSpins + extraSpins + Math.random() * 2;
+  const randomEndAngle = Math.random() * 2 * Math.PI;
+  const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
+  
+  // Select movies to eliminate
+  const moviesToEliminate = [];
+  for (let i = 0; i < moviesPerRound; i++) {
+    const remainingMovies = availableMovies.filter(movie => 
+      !room.eliminationState.eliminatedMovies.includes(movie.id) && 
+      !moviesToEliminate.includes(movie.id)
+    );
+    if (remainingMovies.length > 1) { // Always keep at least one movie
+      const selectedMovie = selectWeightedMovie(remainingMovies, room.wheelRotation + totalRotation + (i * 0.5), room.movies.length);
+      moviesToEliminate.push(selectedMovie.id);
+    }
+  }
+  
+  // Update elimination state
+  room.eliminationState.currentRound = currentRound;
+  room.eliminationState.eliminatedMovies.push(...moviesToEliminate);
+  
+  // Create elimination spin data
+  const spinData = {
+    duration,
+    totalRotation,
+    eliminatedMovies: moviesToEliminate,
+    spinnedBy: room.users.get(socket.id)?.name || 'Unknown',
+    startTime: Date.now(),
+    timestamp: Date.now(),
+    isEliminationRound: true,
+    currentRound,
+    totalRounds: eliminationRounds,
+    moviesRemaining: totalMoviesLeft - moviesToEliminate.length
+  };
+  
+  room.currentSpin = spinData;
+  io.to(roomCode).emit('wheel-spinning', spinData);
+  
+  // Handle spin completion
+  setTimeout(() => {
+    if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
+      room.currentSpin = null;
+      room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
+      
+      // Mark movies as eliminated
+      moviesToEliminate.forEach(movieId => {
+        const movie = room.movies.find(m => m.id === movieId);
+        if (movie) {
+          movie.eliminated = true;
+        }
+      });
+      
+      io.to(roomCode).emit('elimination-complete', {
+        eliminatedMovies: moviesToEliminate,
+        currentRound,
+        totalRounds: eliminationRounds,
+        moviesRemaining: totalMoviesLeft - moviesToEliminate.length
+      });
+      
+      // Check if we need to do final spin
+      const finalMoviesLeft = availableMovies.filter(movie => 
+        !movie.eliminated && !room.eliminationState.eliminatedMovies.includes(movie.id)
+      );
+      
+      if (finalMoviesLeft.length === 1) {
+        // Only one movie left, declare winner
+        setTimeout(() => {
+          io.to(roomCode).emit('wheel-stopped', { selectedMovie: finalMoviesLeft[0] });
+          room.eliminationState = null;
+        }, 2000);
+      } else if (currentRound === eliminationRounds) {
+        // Time for final spin
+        setTimeout(() => {
+          performSingleSpin(room, roomCode, socket, duration, finalMoviesLeft);
+          room.eliminationState = null;
+        }, 3000);
+      }
+    }
+  }, duration * 1000 + 1000);
+}
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
@@ -280,7 +420,7 @@ io.on('connection', (socket) => {
     console.log(`Movie removed from room ${roomCode}:`, movieId);
   });
   
-  socket.on('start-spin', ({ duration }) => {
+  socket.on('start-spin', ({ duration, eliminationRounds = 0 }) => {
     const roomCode = userRooms.get(socket.id);
     const room = rooms.get(roomCode);
     
@@ -296,46 +436,15 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Generate synchronized spin parameters on server
-    // For longer durations, spin more times to keep it interesting
-    const baseSpins = 3;
-    const extraSpins = Math.min(duration / 2, 10); // More spins for longer durations
-    const totalSpins = baseSpins + extraSpins + Math.random() * 3;
-    const randomEndAngle = Math.random() * 2 * Math.PI;
-    const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
+    // If no elimination rounds, do normal spin
+    if (eliminationRounds === 0) {
+      performSingleSpin(room, roomCode, socket, duration, availableMovies);
+    } else {
+      // Start elimination rounds
+      performEliminationRounds(room, roomCode, socket, duration, eliminationRounds, availableMovies);
+    }
     
-    // Calculate winning movie with weighted probability based on votes
-    const selectedMovie = selectWeightedMovie(availableMovies, room.wheelRotation + totalRotation, room.movies.length);
-    
-    // Create synchronized spin data with timestamp
-    const spinData = {
-      duration,
-      totalRotation,
-      selectedMovie,
-      spinnedBy: room.users.get(socket.id)?.name || 'Unknown',
-      startTime: Date.now(),
-      timestamp: Date.now() // For client synchronization
-    };
-    
-    // Store current spin in room for late joiners
-    room.currentSpin = spinData;
-    
-    // Broadcast to all clients in room
-    io.to(roomCode).emit('wheel-spinning', spinData);
-    
-    // Clear the spin data after it completes and update wheel rotation
-    setTimeout(() => {
-      if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
-        room.currentSpin = null;
-        // Update the room's wheel rotation to the final position
-        room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
-        
-        // Emit victory sound event
-        io.to(roomCode).emit('wheel-stopped', { selectedMovie });
-      }
-    }, duration * 1000 + 1000); // Add 1 second buffer
-    
-    console.log(`Wheel spun in room ${roomCode} by ${room.users.get(socket.id)?.name}, winner: ${selectedMovie.title}`);
+    console.log(`Wheel spun in room ${roomCode} by ${room.users.get(socket.id)?.name} with ${eliminationRounds} elimination rounds`);
   });
   
   socket.on('update-music', ({ musicUrl }) => {

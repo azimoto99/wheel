@@ -7,6 +7,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
   const [rotation, setRotation] = useState(initialRotation);
   const [spinDuration, setSpinDuration] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [eliminationRounds, setEliminationRounds] = useState(0);
   const tickIntervalRef = useRef(null);
   
   // Get theme colors for Canvas (CSS variables don't work in Canvas)
@@ -243,18 +244,23 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     ctx.shadowOffsetY = 2;
     
     // Draw the main arrow body - positioned to point at 3 o'clock from outside the wheel
-    // Arrow tip should be just outside the wheel edge at 3 o'clock
-    const arrowTipX = centerX + radius + 2;
-    const arrowTipY = centerY;
+    // Arrow tip should point TO the wheel edge at exactly 3 o'clock
+    const wheelEdgeX = centerX + radius; // Exact wheel edge at 3 o'clock
+    const wheelEdgeY = centerY; // Exact center height
+    
+    // Arrow extends outward from the wheel edge
+    const arrowLength = 30;
+    const arrowWidth = 10;
     
     ctx.beginPath();
-    ctx.moveTo(arrowTipX, arrowTipY); // Arrow tip (points to wheel edge)
-    ctx.lineTo(arrowTipX + 20, arrowTipY - 15); // Top of arrow
-    ctx.lineTo(arrowTipX + 20, arrowTipY - 5); // Top of shaft
-    ctx.lineTo(arrowTipX + 35, arrowTipY - 5); // Right of shaft
-    ctx.lineTo(arrowTipX + 35, arrowTipY + 5); // Right of shaft bottom
-    ctx.lineTo(arrowTipX + 20, arrowTipY + 5); // Bottom of shaft
-    ctx.lineTo(arrowTipX + 20, arrowTipY + 15); // Bottom of arrow
+    // Arrow tip points to the wheel edge
+    ctx.moveTo(wheelEdgeX, wheelEdgeY); // Tip touches wheel at 3 o'clock
+    ctx.lineTo(wheelEdgeX + 15, wheelEdgeY - arrowWidth); // Top of arrowhead
+    ctx.lineTo(wheelEdgeX + 15, wheelEdgeY - 4); // Top of shaft
+    ctx.lineTo(wheelEdgeX + arrowLength, wheelEdgeY - 4); // Right side of shaft
+    ctx.lineTo(wheelEdgeX + arrowLength, wheelEdgeY + 4); // Right side of shaft bottom
+    ctx.lineTo(wheelEdgeX + 15, wheelEdgeY + 4); // Bottom of shaft
+    ctx.lineTo(wheelEdgeX + 15, wheelEdgeY + arrowWidth); // Bottom of arrowhead
     ctx.closePath();
     ctx.fill();
     
@@ -266,7 +272,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     // Add a small circle at the base of the arrow for attachment point
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(arrowTipX + 35, arrowTipY, 6, 0, 2 * Math.PI);
+    ctx.arc(wheelEdgeX + arrowLength, wheelEdgeY, 6, 0, 2 * Math.PI);
     ctx.fill();
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 1;
@@ -408,7 +414,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     
     // Send spin request to server instead of spinning locally
     if (onSpin) {
-      onSpin(spinDuration, null, true); // Third parameter indicates this is a spin start request
+      onSpin(spinDuration, eliminationRounds, true); // Pass elimination rounds to server
     }
   };
   
@@ -429,6 +435,10 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
             <div className="stat-value">{spinDuration}s</div>
             <div className="stat-label">Duration</div>
           </div>
+          <div className="stat-card">
+            <div className="stat-value">{eliminationRounds === 0 ? 'Off' : eliminationRounds}</div>
+            <div className="stat-label">Elimination</div>
+          </div>
         </div>
       )}
       
@@ -444,6 +454,23 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
             onChange={(e) => setSpinDuration(Number(e.target.value))}
             disabled={isSpinning}
           />
+        </div>
+        
+        <div className="elimination-rounds-control">
+          <label>Elimination Rounds: {eliminationRounds === 0 ? 'Off' : eliminationRounds}</label>
+          <input
+            type="range"
+            min="0"
+            max="5"
+            value={eliminationRounds}
+            onChange={(e) => setEliminationRounds(Number(e.target.value))}
+            disabled={isSpinning}
+          />
+          <div className="elimination-help">
+            {eliminationRounds === 0 
+              ? 'Direct final spin - winner selected immediately' 
+              : `${eliminationRounds} elimination ${eliminationRounds === 1 ? 'round' : 'rounds'} before final spin`}
+          </div>
         </div>
       </div>
       
