@@ -205,31 +205,47 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
   const drawPointer = (ctx, centerX, centerY, radius) => {
     const themeColors = getThemeColors();
     
-    // Draw pointer at 3 o'clock position (right side)
-    const gradient = ctx.createLinearGradient(centerX + radius + 5, centerY - 15, centerX + radius + 20, centerY + 15);
-    gradient.addColorStop(0, themeColors.primary);
-    gradient.addColorStop(1, themeColors.hover);
+    // Draw arrow at 3 o'clock position (right side)
+    const gradient = ctx.createLinearGradient(centerX + radius + 5, centerY - 20, centerX + radius + 35, centerY + 20);
+    gradient.addColorStop(0, '#FFD700'); // Gold color for visibility
+    gradient.addColorStop(1, '#FFA500'); // Orange for gradient effect
     
     ctx.fillStyle = gradient;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetX = 2;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 2;
     
+    // Draw the main arrow body
     ctx.beginPath();
-    ctx.moveTo(centerX + radius + 25, centerY);
-    ctx.lineTo(centerX + radius + 8, centerY - 15);
-    ctx.lineTo(centerX + radius + 8, centerY + 15);
+    ctx.moveTo(centerX + radius + 35, centerY); // Arrow tip
+    ctx.lineTo(centerX + radius + 15, centerY - 20); // Top of arrow
+    ctx.lineTo(centerX + radius + 15, centerY - 8); // Top of shaft
+    ctx.lineTo(centerX + radius + 5, centerY - 8); // Left of shaft
+    ctx.lineTo(centerX + radius + 5, centerY + 8); // Left of shaft bottom
+    ctx.lineTo(centerX + radius + 15, centerY + 8); // Bottom of shaft
+    ctx.lineTo(centerX + radius + 15, centerY + 20); // Bottom of arrow
     ctx.closePath();
     ctx.fill();
     
-    // Add a small circle at the base of the pointer
+    // Add a white outline for contrast
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Add a small circle at the base of the arrow for attachment point
+    ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(centerX + radius + 8, centerY, 4, 0, 2 * Math.PI);
+    ctx.arc(centerX + radius + 5, centerY, 6, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
   };
   
   const drawWinningIndicator = (ctx, centerX, centerY, radius) => {
