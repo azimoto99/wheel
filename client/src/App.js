@@ -235,20 +235,22 @@ function App() {
       </header>
       
       <main className="app-main">
-        <div className="sidebar">
-          <RoomControls
-            room={room}
-            users={users}
-            onCreateRoom={handleCreateRoom}
-            onJoinRoom={handleJoinRoom}
-            onLeaveRoom={handleLeaveRoom}
-            isConnected={isConnected}
-            userName={userName}
-            onUserNameChange={setUserName}
-          />
-          
-          {room && (
-            <>
+        {room ? (
+          <div className="wheel-centered-layout">
+            <div className="control-panel control-panel-top">
+              <RoomControls
+                room={room}
+                users={users}
+                onCreateRoom={handleCreateRoom}
+                onJoinRoom={handleJoinRoom}
+                onLeaveRoom={handleLeaveRoom}
+                isConnected={isConnected}
+                userName={userName}
+                onUserNameChange={setUserName}
+              />
+            </div>
+            
+            <div className="control-panel control-panel-left">
               <MovieManager
                 movies={movies}
                 onAddMovie={handleAddMovie}
@@ -259,53 +261,53 @@ function App() {
                 currentUserId={socket?.id}
                 eliminationRounds={eliminationRounds}
               />
-              
+            </div>
+            
+            <div className="wheel-center">
+              <Wheel
+                movies={movies}
+                onSpin={handleSpinWheel}
+                isSpinning={isSpinning}
+                selectedMovie={selectedMovie}
+                theme={theme}
+                spinData={currentSpinData}
+                initialRotation={wheelRotation}
+                onTickSound={tickSoundCallback}
+              />
+            </div>
+            
+            <div className="control-panel control-panel-right">
               <AudioControls
                 socket={socket}
                 roomCode={room?.code}
                 onRegisterTickSound={setTickSoundCallback}
               />
-            </>
-          )}
-        </div>
-        
-        <div className="main-content">
-          {room ? (
-            <Wheel
-              movies={movies}
-              onSpin={handleSpinWheel}
-              isSpinning={isSpinning}
-              selectedMovie={selectedMovie}
-              theme={theme}
-              spinData={currentSpinData}
-              initialRotation={wheelRotation}
-              onTickSound={tickSoundCallback}
-            />
-          ) : (
-            <div className="welcome-screen">
-              <h2>Welcome to The Wheel!</h2>
-              <p>Create a room or join an existing one to start selecting movies with friends.</p>
-              <div className="features">
-                <div className="feature">
-                  <h3>🎲 Interactive Wheel</h3>
-                  <p>Spin the wheel to randomly select a movie</p>
-                </div>
-                <div className="feature">
-                  <h3>👥 Multiplayer</h3>
-                  <p>Join rooms with friends using 4-digit codes</p>
-                </div>
-                <div className="feature">
-                  <h3>🎭 Movie Database</h3>
-                  <p>Search and add movies with autocomplete</p>
-                </div>
-                <div className="feature">
-                  <h3>🎨 Themes</h3>
-                  <p>Choose from multiple visual themes</p>
-                </div>
+            </div>
+          </div>
+        ) : (
+          <div className="welcome-screen">
+            <h2>Welcome to The Wheel!</h2>
+            <p>Create a room or join an existing one to start selecting movies with friends.</p>
+            <div className="features">
+              <div className="feature">
+                <h3>🎲 Interactive Wheel</h3>
+                <p>Spin the wheel to randomly select a movie</p>
+              </div>
+              <div className="feature">
+                <h3>👥 Multiplayer</h3>
+                <p>Join rooms with friends using 4-digit codes</p>
+              </div>
+              <div className="feature">
+                <h3>🎭 Movie Database</h3>
+                <p>Search and add movies with autocomplete</p>
+              </div>
+              <div className="feature">
+                <h3>🎨 Themes</h3>
+                <p>Choose from multiple visual themes</p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
       
       {room && spinHistory.length > 0 && (
