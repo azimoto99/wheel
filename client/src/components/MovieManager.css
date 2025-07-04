@@ -395,6 +395,45 @@
   margin-top: var(--space-1);
 }
 
+.movie-item.eliminated {
+  opacity: 0.5;
+  background: var(--bg-secondary);
+  border-color: #f59e0b;
+  position: relative;
+}
+
+.movie-item.eliminated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(245, 158, 11, 0.15) 8px,
+    rgba(245, 158, 11, 0.15) 16px
+  );
+  pointer-events: none;
+  border-radius: var(--radius-lg);
+}
+
+.eliminated-status {
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin: 0;
+  margin-top: var(--space-1);
+}
+
+.eliminated-count {
+  color: #f59e0b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .movie-poster {
   width: 40px;
   height: 60px;

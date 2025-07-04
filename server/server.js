@@ -224,8 +224,10 @@ function performEliminationRounds(room, roomCode, socket, duration, eliminationR
 
   function performNextEliminationRound() {
     const currentRound = room.eliminationState.currentRound + 1;
+    
+    // Get currently available movies (not vetoed, not eliminated)
     const remainingMovies = room.movies.filter(movie => 
-      !movie.vetoed && !movie.eliminated && !room.eliminationState.eliminatedMovies.includes(movie.id)
+      !movie.vetoed && !movie.eliminated
     );
     
     if (remainingMovies.length <= 1) {
@@ -257,11 +259,10 @@ function performEliminationRounds(room, roomCode, socket, duration, eliminationR
     const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
     
     // Select movie to eliminate (one per spin for better user experience)
-    const movieToEliminate = selectWeightedMovie(remainingMovies, room.wheelRotation + totalRotation, room.movies.length);
+    const movieToEliminate = selectWeightedMovie(remainingMovies, room.wheelRotation + totalRotation, remainingMovies.length);
     
     // Update elimination state
     room.eliminationState.currentRound = currentRound;
-    room.eliminationState.eliminatedMovies.push(movieToEliminate.id);
     
     // Create elimination spin data
     const spinData = {
@@ -300,10 +301,23 @@ function performEliminationRounds(room, roomCode, socket, duration, eliminationR
           moviesRemaining: totalMoviesLeft - 1
         });
         
-        // Continue with next round after a delay
-        setTimeout(() => {
-          performNextEliminationRound();
-        }, 2000);
+        // Continue with next round after a delay, but only if we haven't finished all rounds
+        if (currentRound < eliminationRounds) {
+          setTimeout(() => {
+            performNextEliminationRound();
+          }, 2000);
+        } else {
+          // All elimination rounds complete, proceed to final spin
+          setTimeout(() => {
+            const finalRemainingMovies = room.movies.filter(movie => !movie.vetoed && !movie.eliminated);
+            if (finalRemainingMovies.length > 1) {
+              performSingleSpin(room, roomCode, socket, duration, finalRemainingMovies);
+            } else if (finalRemainingMovies.length === 1) {
+              io.to(roomCode).emit('wheel-stopped', { selectedMovie: finalRemainingMovies[0] });
+            }
+            room.eliminationState = null;
+          }, 3000);
+        }
       }
     }, duration * 1000 + 1000);
   }

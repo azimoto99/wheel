@@ -338,20 +338,21 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
   };
   
   const getWinningMovie = (finalRotation) => {
-    if (movies.length === 0) return null;
+    const availableMovies = movies.filter(movie => !movie.vetoed && !movie.eliminated);
+    if (availableMovies.length === 0) return null;
     
     // Normalize rotation to 0-2π range
     const normalizedRotation = ((finalRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
     
     // Calculate which segment is at 3 o'clock (0 radians) position
     // Since we want the segment that the pointer (at 3 o'clock) is pointing to
-    const anglePerSegment = (2 * Math.PI) / movies.length;
+    const anglePerSegment = (2 * Math.PI) / availableMovies.length;
     
     // The wheel rotates clockwise, so we need to account for that
     // The winning segment is the one that ends up at the pointer position
-    const winningIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % movies.length;
+    const winningIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % availableMovies.length;
     
-    return movies[winningIndex];
+    return availableMovies[winningIndex];
   };
   
   const performSynchronizedSpin = (spinData, timeOffset = 0) => {
@@ -381,8 +382,9 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     canvas.style.transform = `rotate(${finalRotation}rad)`;
     
     // Add tick sounds during spinning
-    if (movies.length > 0 && onTickSound) {
-      const anglePerSegment = (2 * Math.PI) / movies.length;
+    const availableMovies = movies.filter(movie => !movie.vetoed && !movie.eliminated);
+    if (availableMovies.length > 0 && onTickSound) {
+      const anglePerSegment = (2 * Math.PI) / availableMovies.length;
       const tickInterval = (actualDuration * 1000) / (totalRotation / anglePerSegment);
       const maxTickInterval = 200; // Don't tick too fast
       const finalTickInterval = Math.max(tickInterval, maxTickInterval);
@@ -410,7 +412,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
   };
   
   const startSpin = () => {
-    if (movies.length === 0 || isAnimating) return;
+    const availableMovies = movies.filter(movie => !movie.vetoed && !movie.eliminated);
+    if (availableMovies.length === 0 || isAnimating) return;
     
     // Send spin request to server instead of spinning locally
     if (onSpin) {
@@ -419,7 +422,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
   };
   
   const handleCanvasClick = () => {
-    if (movies.length === 0 || isSpinning || isAnimating) return;
+    const availableMovies = movies.filter(movie => !movie.vetoed && !movie.eliminated);
+    if (availableMovies.length === 0 || isSpinning || isAnimating) return;
     startSpin();
   };
   
@@ -428,8 +432,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       {movies.length > 0 && (
         <div className="wheel-stats">
           <div className="stat-card">
-            <div className="stat-value">{movies.length}</div>
-            <div className="stat-label">Movies</div>
+            <div className="stat-value">{movies.filter(movie => !movie.vetoed && !movie.eliminated).length}</div>
+            <div className="stat-label">Available</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">{spinDuration}s</div>

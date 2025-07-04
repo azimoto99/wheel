@@ -285,27 +285,17 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="welcome-screen">
-            <h2>Welcome to The Wheel!</h2>
-            <p>Create a room or join an existing one to start selecting movies with friends.</p>
-            <div className="features">
-              <div className="feature">
-                <h3>🎲 Interactive Wheel</h3>
-                <p>Spin the wheel to randomly select a movie</p>
-              </div>
-              <div className="feature">
-                <h3>👥 Multiplayer</h3>
-                <p>Join rooms with friends using 4-digit codes</p>
-              </div>
-              <div className="feature">
-                <h3>🎭 Movie Database</h3>
-                <p>Search and add movies with autocomplete</p>
-              </div>
-              <div className="feature">
-                <h3>🎨 Themes</h3>
-                <p>Choose from multiple visual themes</p>
-              </div>
-            </div>
+          <div className="room-setup-screen">
+            <RoomControls
+              room={room}
+              users={users}
+              onCreateRoom={handleCreateRoom}
+              onJoinRoom={handleJoinRoom}
+              onLeaveRoom={handleLeaveRoom}
+              isConnected={isConnected}
+              userName={userName}
+              onUserNameChange={setUserName}
+            />
           </div>
         )}
       </main>

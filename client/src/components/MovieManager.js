@@ -317,6 +317,12 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false, soc
               </div>
             )}
             
+            {movies.filter(m => m.eliminated).length > 0 && (
+              <div className="eliminated-count">
+                🎯 Eliminated: {movies.filter(m => m.eliminated).length}
+              </div>
+            )}
+            
             <div className="probability-info">
               📊 Wheel segments scale with votes
             </div>
@@ -330,7 +336,7 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false, soc
         ) : (
           <div className="movie-grid">
             {movies.map((movie) => (
-              <div key={movie.id} className={`movie-item ${movie.vetoed ? 'vetoed' : ''}`}>
+              <div key={movie.id} className={`movie-item ${movie.vetoed ? 'vetoed' : ''} ${movie.eliminated ? 'eliminated' : ''}`}>
                 {movie.poster && (
                   <img
                     src={movie.poster}
@@ -347,9 +353,12 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false, soc
                   {movie.vetoed && (
                     <p className="vetoed-status">❌ VETOED</p>
                   )}
+                  {movie.eliminated && (
+                    <p className="eliminated-status">🎯 ELIMINATED</p>
+                  )}
                 </div>
                 
-                {!movie.vetoed && (
+                {!movie.vetoed && !movie.eliminated && (
                   <div className="movie-actions">
                     <div className="vote-section">
                       <button
