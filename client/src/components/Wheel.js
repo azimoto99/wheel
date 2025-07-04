@@ -245,8 +245,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     
     // Draw the main arrow body - positioned to point at 3 o'clock from outside the wheel
     // Arrow tip should point TO the wheel edge at exactly 3 o'clock
-    const wheelEdgeX = centerX + radius - 20; // Move 20px to the left
-    const wheelEdgeY = centerY + 10; // Move 10px down to correct height
+    const wheelEdgeX = centerX + radius + 10; // Move 30px to the right (was -20, now +10)
+    const wheelEdgeY = centerY + 20; // Move additional 10px down (was +10, now +20)
     
     // Arrow extends outward from the wheel edge
     const arrowLength = 30;
