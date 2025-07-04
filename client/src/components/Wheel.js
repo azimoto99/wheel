@@ -227,15 +227,15 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     ctx.shadowOffsetX = 3;
     ctx.shadowOffsetY = 2;
     
-    // Draw the main arrow body
+    // Draw the main arrow body - positioned to point at 3 o'clock from outside the wheel
     ctx.beginPath();
-    ctx.moveTo(centerX + radius + 35, centerY); // Arrow tip
-    ctx.lineTo(centerX + radius + 15, centerY - 20); // Top of arrow
-    ctx.lineTo(centerX + radius + 15, centerY - 8); // Top of shaft
-    ctx.lineTo(centerX + radius + 5, centerY - 8); // Left of shaft
-    ctx.lineTo(centerX + radius + 5, centerY + 8); // Left of shaft bottom
-    ctx.lineTo(centerX + radius + 15, centerY + 8); // Bottom of shaft
-    ctx.lineTo(centerX + radius + 15, centerY + 20); // Bottom of arrow
+    ctx.moveTo(centerX + radius + 5, centerY); // Arrow tip (points to wheel edge)
+    ctx.lineTo(centerX + radius + 25, centerY - 15); // Top of arrow
+    ctx.lineTo(centerX + radius + 25, centerY - 5); // Top of shaft
+    ctx.lineTo(centerX + radius + 40, centerY - 5); // Right of shaft
+    ctx.lineTo(centerX + radius + 40, centerY + 5); // Right of shaft bottom
+    ctx.lineTo(centerX + radius + 25, centerY + 5); // Bottom of shaft
+    ctx.lineTo(centerX + radius + 25, centerY + 15); // Bottom of arrow
     ctx.closePath();
     ctx.fill();
     
@@ -247,7 +247,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     // Add a small circle at the base of the arrow for attachment point
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
-    ctx.arc(centerX + radius + 5, centerY, 6, 0, 2 * Math.PI);
+    ctx.arc(centerX + radius + 40, centerY, 6, 0, 2 * Math.PI);
     ctx.fill();
     ctx.strokeStyle = '#FFFFFF';
     ctx.lineWidth = 1;
