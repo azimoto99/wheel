@@ -159,11 +159,11 @@ function App() {
   };
   
   const themes = [
-    { value: 'rosebud', label: 'Rosebud (Citizen Kane)' },
-    { value: 'godfather', label: 'Make It an Offer (The Godfather)' },
-    { value: 'mermaid', label: 'Under the Sea (The Little Mermaid)' },
-    { value: 'impossible', label: 'Mission Accepted (Mission Impossible)' },
-    { value: 'avengers', label: 'Assemble! (The Avengers)' }
+    { value: 'rosebud', label: 'Rosebud' },
+    { value: 'godfather', label: 'Make It an Offer' },
+    { value: 'mermaid', label: 'Under the Sea' },
+    { value: 'impossible', label: 'Mission Accepted' },
+    { value: 'avengers', label: 'Assemble!' }
   ];
   
   return (
