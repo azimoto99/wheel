@@ -34,30 +34,40 @@ function selectWeightedMovie(availableMovies, finalWheelRotation, totalMovieCoun
   // Calculate weights for all available movies
   const weightedMovies = availableMovies.map(movie => ({
     ...movie,
-    weight: Math.max(0.1, baseWeight + (movie.votes * voteMultiplier)) // Minimum 10% chance
+    weight: Math.max(0.1, baseWeight + ((movie.votes || 0) * voteMultiplier)) // Minimum 10% chance
   }));
   
   // Total weight for normalization
   const totalWeight = weightedMovies.reduce((sum, movie) => sum + movie.weight, 0);
   
-  // Use wheel rotation to determine selection, but bias towards higher weighted movies
+  // Calculate segment boundaries based on weights (same as client)
+  let currentAngle = 0;
+  const movieSegments = weightedMovies.map(movie => {
+    const segmentAngle = (movie.weight / totalWeight) * (2 * Math.PI);
+    const segment = {
+      ...movie,
+      startAngle: currentAngle,
+      endAngle: currentAngle + segmentAngle
+    };
+    currentAngle += segmentAngle;
+    return segment;
+  });
+  
+  // Normalize the wheel rotation
   const normalizedRotation = ((finalWheelRotation % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-  const anglePerSegment = (2 * Math.PI) / totalMovieCount;
-  const baseIndex = Math.floor(((2 * Math.PI - normalizedRotation) / anglePerSegment)) % totalMovieCount;
   
-  // Create a random selection biased by weights
-  const random = Math.random() * totalWeight;
-  let weightSum = 0;
+  // Find which segment the pointer lands on
+  // Pointer points up, so we need to account for that
+  const pointerAngle = (2 * Math.PI - normalizedRotation) % (2 * Math.PI);
   
-  for (const movie of weightedMovies) {
-    weightSum += movie.weight;
-    if (random <= weightSum) {
-      return movie;
+  for (const segment of movieSegments) {
+    if (pointerAngle >= segment.startAngle && pointerAngle < segment.endAngle) {
+      return segment;
     }
   }
   
-  // Fallback to last available movie
-  return weightedMovies[weightedMovies.length - 1];
+  // Fallback to last segment (should rarely happen)
+  return movieSegments[movieSegments.length - 1];
 }
 
 app.get('/api/rooms/:code', (req, res) => {

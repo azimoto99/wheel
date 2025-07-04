@@ -589,7 +589,7 @@
   font-size: 0.875rem;
 }
 
-.elimination-info, .veto-info, .vetoed-count {
+.elimination-info, .veto-info, .vetoed-count, .probability-info {
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -607,6 +607,10 @@
 
 .vetoed-count {
   color: #6b7280;
+}
+
+.probability-info {
+  color: #3b82f6;
 }
 
 /* Empty state animation */

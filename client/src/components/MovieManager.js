@@ -316,6 +316,10 @@ const MovieManager = ({ movies, onAddMovie, onRemoveMovie, disabled = false, soc
                 ❌ Vetoed: {movies.filter(m => m.vetoed).length}
               </div>
             )}
+            
+            <div className="probability-info">
+              📊 Wheel segments scale with votes
+            </div>
           </div>
         )}
         

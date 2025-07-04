@@ -99,12 +99,35 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       return;
     }
     
-    const anglePerSegment = (2 * Math.PI) / availableMovies.length;
+    // Calculate segment angles based on voting weights
+    const baseWeight = 1;
+    const voteMultiplier = 0.3;
+    
+    const weightedMovies = availableMovies.map(movie => ({
+      ...movie,
+      weight: Math.max(0.1, baseWeight + ((movie.votes || 0) * voteMultiplier))
+    }));
+    
+    const totalWeight = weightedMovies.reduce((sum, movie) => sum + movie.weight, 0);
+    
+    // Calculate cumulative angles for each segment
+    let currentAngle = 0;
+    const movieSegments = weightedMovies.map(movie => {
+      const segmentAngle = (movie.weight / totalWeight) * (2 * Math.PI);
+      const segment = {
+        ...movie,
+        startAngle: currentAngle,
+        endAngle: currentAngle + segmentAngle,
+        segmentAngle
+      };
+      currentAngle += segmentAngle;
+      return segment;
+    });
+    
     const themeColors = colors[theme] || colors.rosebud;
     
-    availableMovies.forEach((movie, index) => {
-      const startAngle = index * anglePerSegment;
-      const endAngle = (index + 1) * anglePerSegment;
+    movieSegments.forEach((movie, index) => {
+      const { startAngle, endAngle } = movie;
       
       ctx.fillStyle = themeColors[index % themeColors.length];
       ctx.beginPath();
@@ -113,34 +136,59 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       ctx.closePath();
       ctx.fill();
       
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 2;
       ctx.stroke();
+      
+      // Add subtle gradient effect for highly voted movies
+      if (movie.votes && movie.votes > 0) {
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fill();
+      }
       
       ctx.save();
       ctx.translate(centerX, centerY);
-      ctx.rotate(startAngle + anglePerSegment / 2);
+      
+      // Use the center of this specific segment
+      const segmentCenter = startAngle + (endAngle - startAngle) / 2;
+      ctx.rotate(segmentCenter);
+      
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 12px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
       ctx.shadowBlur = 2;
       ctx.shadowOffsetY = 1;
       
-      const text = movie.title.length > 20 ? movie.title.substring(0, 20) + '...' : movie.title;
+      // Adjust font size based on segment size
+      const segmentRatio = movie.segmentAngle / (2 * Math.PI / availableMovies.length);
+      const baseFontSize = Math.min(12, Math.max(8, 12 * Math.sqrt(segmentRatio)));
+      
+      ctx.font = `bold ${baseFontSize}px Inter, sans-serif`;
+      
+      // Adjust text length based on segment size
+      const maxTextLength = Math.max(8, Math.floor(20 * segmentRatio));
+      const text = movie.title.length > maxTextLength ? movie.title.substring(0, maxTextLength) + '...' : movie.title;
       ctx.fillText(text, radius * 0.7, -2);
       
-      if (movie.year) {
-        ctx.font = '10px Inter, sans-serif';
+      if (movie.year && segmentRatio > 0.3) { // Only show year if segment is large enough
+        ctx.font = `${Math.max(8, baseFontSize - 2)}px Inter, sans-serif`;
         ctx.fillText(`(${movie.year})`, radius * 0.7, 12);
       }
       
-      // Show vote count if movie has votes
-      if (movie.votes && movie.votes !== 0) {
-        ctx.font = 'bold 10px Inter, sans-serif';
+      // Show vote count if movie has votes and segment is large enough
+      if (movie.votes && movie.votes !== 0 && segmentRatio > 0.2) {
+        ctx.font = `bold ${Math.max(8, baseFontSize - 2)}px Inter, sans-serif`;
         ctx.fillStyle = movie.votes > 0 ? '#10b981' : '#dc2626';
         const voteText = movie.votes > 0 ? `+${movie.votes}` : `${movie.votes}`;
-        ctx.fillText(voteText, radius * 0.7, 25);
+        ctx.fillText(voteText, radius * 0.7, segmentRatio > 0.3 ? 25 : 12);
       }
       
       ctx.restore();
@@ -149,8 +197,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     drawPointer(ctx, centerX, centerY, radius);
     drawWinningIndicator(ctx, centerX, centerY, radius);
     
-    if (selectedMovie) {
-      highlightSelectedSegment(ctx, centerX, centerY, radius);
+    if (selectedMovie && movieSegments) {
+      highlightSelectedSegment(ctx, centerX, centerY, radius, movieSegments);
     }
   };
   
@@ -205,15 +253,13 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     ctx.fillText('WINNER', centerX + radius + 35, centerY - 20);
   };
   
-  const highlightSelectedSegment = (ctx, centerX, centerY, radius) => {
-    if (!selectedMovie) return;
+  const highlightSelectedSegment = (ctx, centerX, centerY, radius, movieSegments) => {
+    if (!selectedMovie || !movieSegments) return;
     
-    const selectedIndex = movies.findIndex(movie => movie.id === selectedMovie.id);
-    if (selectedIndex === -1) return;
+    const selectedSegment = movieSegments.find(segment => segment.id === selectedMovie.id);
+    if (!selectedSegment) return;
     
-    const anglePerSegment = (2 * Math.PI) / movies.length;
-    const startAngle = selectedIndex * anglePerSegment;
-    const endAngle = (selectedIndex + 1) * anglePerSegment;
+    const { startAngle, endAngle } = selectedSegment;
     
     // Highlight the winning segment with a glowing border
     ctx.strokeStyle = '#FFD700';
