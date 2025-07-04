@@ -78,8 +78,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Filter out vetoed movies for display
-    const availableMovies = movies.filter(movie => !movie.vetoed);
+    // Filter out vetoed and eliminated movies for display
+    const availableMovies = movies.filter(movie => !movie.vetoed && !movie.eliminated);
     
     if (availableMovies.length === 0) {
       const themeColors = getThemeColors();
@@ -245,8 +245,8 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     
     // Draw the main arrow body - positioned to point at 3 o'clock from outside the wheel
     // Arrow tip should point TO the wheel edge at exactly 3 o'clock
-    const wheelEdgeX = centerX + radius; // Exact wheel edge at 3 o'clock
-    const wheelEdgeY = centerY; // Exact center height
+    const wheelEdgeX = centerX + radius - 20; // Move 20px to the left
+    const wheelEdgeY = centerY + 10; // Move 10px down to correct height
     
     // Arrow extends outward from the wheel edge
     const arrowLength = 30;
@@ -359,7 +359,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     
     setIsAnimating(true);
     
-    const { totalRotation, duration, selectedMovie, syncMode, remainingTime } = spinData;
+    const { totalRotation, duration, selectedMovie, syncMode, remainingTime, isEliminationRound } = spinData;
     const finalRotation = rotation + totalRotation;
     
     const canvas = canvasRef.current;

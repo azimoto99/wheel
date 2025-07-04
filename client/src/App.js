@@ -125,17 +125,22 @@ function App() {
       
       setTimeout(() => {
         setIsSpinning(false);
-        setSelectedMovie(spinResult);
-        setCurrentSpinData(null);
         
-        // Only add to history if this isn't a sync event
-        if (!syncMode) {
-          setSpinHistory(prev => [...prev, {
-            movie: spinResult,
-            timestamp: new Date(),
-            spinnedBy
-          }]);
+        // Only set selected movie for final spins, not elimination rounds
+        if (!isEliminationRound && spinResult) {
+          setSelectedMovie(spinResult);
+          
+          // Only add to history if this isn't a sync event and not an elimination round
+          if (!syncMode) {
+            setSpinHistory(prev => [...prev, {
+              movie: spinResult,
+              timestamp: new Date(),
+              spinnedBy
+            }]);
+          }
         }
+        
+        setCurrentSpinData(null);
       }, actualDuration);
     });
     
