@@ -221,96 +221,95 @@ function performEliminationRounds(room, roomCode, socket, duration, eliminationR
       eliminatedMovies: []
     };
   }
-  
-  const currentRound = room.eliminationState.currentRound + 1;
-  const isLastRound = currentRound === eliminationRounds;
-  
-  // Calculate how many movies to eliminate this round
-  const totalMoviesLeft = availableMovies.length - room.eliminationState.eliminatedMovies.length;
-  const moviesPerRound = Math.max(1, Math.floor((totalMoviesLeft - 1) / (eliminationRounds - currentRound + 1)));
-  
-  // Generate spin parameters
-  const baseSpins = 2;
-  const extraSpins = Math.min(duration / 3, 5);
-  const totalSpins = baseSpins + extraSpins + Math.random() * 2;
-  const randomEndAngle = Math.random() * 2 * Math.PI;
-  const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
-  
-  // Select movies to eliminate
-  const moviesToEliminate = [];
-  for (let i = 0; i < moviesPerRound; i++) {
-    const remainingMovies = availableMovies.filter(movie => 
-      !room.eliminationState.eliminatedMovies.includes(movie.id) && 
-      !moviesToEliminate.includes(movie.id)
+
+  function performNextEliminationRound() {
+    const currentRound = room.eliminationState.currentRound + 1;
+    const remainingMovies = room.movies.filter(movie => 
+      !movie.vetoed && !movie.eliminated && !room.eliminationState.eliminatedMovies.includes(movie.id)
     );
-    if (remainingMovies.length > 1) { // Always keep at least one movie
-      const selectedMovie = selectWeightedMovie(remainingMovies, room.wheelRotation + totalRotation + (i * 0.5), room.movies.length);
-      moviesToEliminate.push(selectedMovie.id);
+    
+    if (remainingMovies.length <= 1) {
+      // Only one movie left or none, declare winner or error
+      if (remainingMovies.length === 1) {
+        io.to(roomCode).emit('wheel-stopped', { selectedMovie: remainingMovies[0] });
+      }
+      room.eliminationState = null;
+      return;
     }
-  }
-  
-  // Update elimination state
-  room.eliminationState.currentRound = currentRound;
-  room.eliminationState.eliminatedMovies.push(...moviesToEliminate);
-  
-  // Create elimination spin data
-  const spinData = {
-    duration,
-    totalRotation,
-    eliminatedMovies: moviesToEliminate,
-    spinnedBy: room.users.get(socket.id)?.name || 'Unknown',
-    startTime: Date.now(),
-    timestamp: Date.now(),
-    isEliminationRound: true,
-    currentRound,
-    totalRounds: eliminationRounds,
-    moviesRemaining: totalMoviesLeft - moviesToEliminate.length
-  };
-  
-  room.currentSpin = spinData;
-  io.to(roomCode).emit('wheel-spinning', spinData);
-  
-  // Handle spin completion
-  setTimeout(() => {
-    if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
-      room.currentSpin = null;
-      room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
-      
-      // Mark movies as eliminated
-      moviesToEliminate.forEach(movieId => {
-        const movie = room.movies.find(m => m.id === movieId);
+    
+    if (currentRound > eliminationRounds) {
+      // All elimination rounds complete, do final spin
+      performSingleSpin(room, roomCode, socket, duration, remainingMovies);
+      room.eliminationState = null;
+      return;
+    }
+    
+    // Calculate how many movies to eliminate this round
+    const totalMoviesLeft = remainingMovies.length;
+    const remainingRounds = eliminationRounds - currentRound + 1;
+    const moviesPerRound = Math.max(1, Math.floor((totalMoviesLeft - 1) / remainingRounds));
+    
+    // Generate spin parameters
+    const baseSpins = 2;
+    const extraSpins = Math.min(duration / 3, 5);
+    const totalSpins = baseSpins + extraSpins + Math.random() * 2;
+    const randomEndAngle = Math.random() * 2 * Math.PI;
+    const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
+    
+    // Select movie to eliminate (one per spin for better user experience)
+    const movieToEliminate = selectWeightedMovie(remainingMovies, room.wheelRotation + totalRotation, room.movies.length);
+    
+    // Update elimination state
+    room.eliminationState.currentRound = currentRound;
+    room.eliminationState.eliminatedMovies.push(movieToEliminate.id);
+    
+    // Create elimination spin data
+    const spinData = {
+      duration,
+      totalRotation,
+      selectedMovie: movieToEliminate,
+      eliminatedMovies: [movieToEliminate.id],
+      spinnedBy: room.users.get(socket.id)?.name || 'Unknown',
+      startTime: Date.now(),
+      timestamp: Date.now(),
+      isEliminationRound: true,
+      currentRound,
+      totalRounds: eliminationRounds,
+      moviesRemaining: totalMoviesLeft - 1
+    };
+    
+    room.currentSpin = spinData;
+    io.to(roomCode).emit('wheel-spinning', spinData);
+    
+    // Handle spin completion
+    setTimeout(() => {
+      if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
+        room.currentSpin = null;
+        room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
+        
+        // Mark movie as eliminated
+        const movie = room.movies.find(m => m.id === movieToEliminate.id);
         if (movie) {
           movie.eliminated = true;
         }
-      });
-      
-      io.to(roomCode).emit('elimination-complete', {
-        eliminatedMovies: moviesToEliminate,
-        currentRound,
-        totalRounds: eliminationRounds,
-        moviesRemaining: totalMoviesLeft - moviesToEliminate.length
-      });
-      
-      // Check if we need to do final spin
-      const finalMoviesLeft = availableMovies.filter(movie => 
-        !movie.eliminated && !room.eliminationState.eliminatedMovies.includes(movie.id)
-      );
-      
-      if (finalMoviesLeft.length === 1) {
-        // Only one movie left, declare winner
+        
+        io.to(roomCode).emit('elimination-complete', {
+          eliminatedMovies: [movieToEliminate.id],
+          currentRound,
+          totalRounds: eliminationRounds,
+          moviesRemaining: totalMoviesLeft - 1
+        });
+        
+        // Continue with next round after a delay
         setTimeout(() => {
-          io.to(roomCode).emit('wheel-stopped', { selectedMovie: finalMoviesLeft[0] });
-          room.eliminationState = null;
+          performNextEliminationRound();
         }, 2000);
-      } else if (currentRound === eliminationRounds) {
-        // Time for final spin
-        setTimeout(() => {
-          performSingleSpin(room, roomCode, socket, duration, finalMoviesLeft);
-          room.eliminationState = null;
-        }, 3000);
       }
-    }
-  }, duration * 1000 + 1000);
+    }, duration * 1000 + 1000);
+  }
+  
+  // Start the first elimination round
+  performNextEliminationRound();
 }
 
 io.on('connection', (socket) => {
@@ -562,111 +561,6 @@ io.on('connection', (socket) => {
     console.log(`Movie vote updated in room ${roomCode} by ${userName}: ${movie.title} (${movie.votes} votes)`);
   });
 
-  socket.on('start-elimination', () => {
-    const roomCode = userRooms.get(socket.id);
-    const room = rooms.get(roomCode);
-    
-    if (!room) {
-      socket.emit('error', { message: 'Room not found' });
-      return;
-    }
-    
-    const availableMovies = room.movies.filter(movie => !movie.vetoed);
-    
-    if (availableMovies.length <= 3) {
-      socket.emit('error', { message: 'Need at least 4 movies for elimination rounds' });
-      return;
-    }
-    
-    room.eliminationRounds++;
-    const userName = room.users.get(socket.id)?.name || 'Unknown';
-    
-    io.to(roomCode).emit('elimination-started', { 
-      round: room.eliminationRounds,
-      startedBy: userName,
-      availableMovies: availableMovies.length
-    });
-    
-    // Start automatic elimination spins
-    performEliminationRound(room, roomCode, availableMovies);
-    
-    console.log(`Elimination round ${room.eliminationRounds} started in room ${roomCode} by ${userName}`);
-  });
-
-  function performEliminationRound(room, roomCode, availableMovies) {
-    if (availableMovies.length <= 3) {
-      // Elimination complete
-      io.to(roomCode).emit('elimination-complete', {
-        finalMovies: availableMovies.map(m => m.title),
-        round: room.eliminationRounds
-      });
-      return;
-    }
-    
-    // Perform elimination spin with shorter duration
-    const duration = 3; // Shorter spins for elimination
-    const baseSpins = 2;
-    const totalSpins = baseSpins + Math.random() * 2;
-    const randomEndAngle = Math.random() * 2 * Math.PI;
-    const totalRotation = (totalSpins * 2 * Math.PI) + randomEndAngle;
-    
-    // Select a movie to eliminate (lowest voted or random)
-    const sortedByVotes = availableMovies.sort((a, b) => (a.votes || 0) - (b.votes || 0));
-    const lowestVoteCount = sortedByVotes[0].votes || 0;
-    const candidatesForElimination = sortedByVotes.filter(m => (m.votes || 0) === lowestVoteCount);
-    const movieToEliminate = candidatesForElimination[Math.floor(Math.random() * candidatesForElimination.length)];
-    
-    const spinData = {
-      duration,
-      totalRotation,
-      selectedMovie: movieToEliminate,
-      spinnedBy: 'Elimination System',
-      startTime: Date.now(),
-      timestamp: Date.now(),
-      eliminationRound: true
-    };
-    
-    room.currentSpin = spinData;
-    
-    io.to(roomCode).emit('wheel-spinning', spinData);
-    io.to(roomCode).emit('elimination-spin', {
-      round: room.eliminationRounds,
-      eliminatingMovie: movieToEliminate.title,
-      remainingMovies: availableMovies.length - 1
-    });
-    
-    // Remove the movie after spin completes
-    setTimeout(() => {
-      if (room.currentSpin && room.currentSpin.timestamp === spinData.timestamp) {
-        room.currentSpin = null;
-        room.wheelRotation = (room.wheelRotation + totalRotation) % (2 * Math.PI);
-        
-        // Remove the eliminated movie
-        room.movies = room.movies.filter(m => m.id !== movieToEliminate.id);
-        
-        io.to(roomCode).emit('movie-eliminated', { 
-          movieId: movieToEliminate.id,
-          movieTitle: movieToEliminate.title,
-          round: room.eliminationRounds
-        });
-        
-        io.to(roomCode).emit('wheel-stopped', { selectedMovie: movieToEliminate });
-        
-        // Continue elimination if more movies need to be removed
-        const newAvailableMovies = room.movies.filter(movie => !movie.vetoed);
-        if (newAvailableMovies.length > 3) {
-          setTimeout(() => {
-            performEliminationRound(room, roomCode, newAvailableMovies);
-          }, 2000); // Wait 2 seconds between elimination spins
-        } else {
-          io.to(roomCode).emit('elimination-complete', {
-            finalMovies: newAvailableMovies.map(m => m.title),
-            round: room.eliminationRounds
-          });
-        }
-      }
-    }, duration * 1000 + 1000);
-  }
   
   socket.on('disconnect', () => {
     const roomCode = userRooms.get(socket.id);
