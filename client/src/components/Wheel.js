@@ -3,6 +3,7 @@ import './Wheel.css';
 
 const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', spinData, initialRotation = 0, onTickSound }) => {
   const canvasRef = useRef(null);
+  const arrowCanvasRef = useRef(null);
   const [rotation, setRotation] = useState(initialRotation);
   const [spinDuration, setSpinDuration] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -34,6 +35,7 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
   
   useEffect(() => {
     drawWheel();
+    drawArrow();
   }, [movies, theme, selectedMovie]);
   
   // Update rotation when initialRotation changes (on room join)
@@ -194,7 +196,6 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
       ctx.restore();
     });
     
-    drawPointer(ctx, centerX, centerY, radius);
     drawWinningIndicator(ctx, centerX, centerY, radius);
     
     if (selectedMovie && movieSegments) {
@@ -202,7 +203,17 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
     }
   };
   
-  const drawPointer = (ctx, centerX, centerY, radius) => {
+  const drawArrow = () => {
+    const arrowCanvas = arrowCanvasRef.current;
+    if (!arrowCanvas) return;
+    
+    const ctx = arrowCanvas.getContext('2d');
+    const centerX = arrowCanvas.width / 2;
+    const centerY = arrowCanvas.height / 2;
+    const radius = Math.min(centerX, centerY) - 10;
+    
+    ctx.clearRect(0, 0, arrowCanvas.width, arrowCanvas.height);
+    
     const themeColors = getThemeColors();
     
     // Draw arrow at 3 o'clock position (right side)
@@ -426,13 +437,28 @@ const Wheel = ({ movies, onSpin, isSpinning, selectedMovie, theme = 'rosebud', s
           </div>
         ) : (
           <>
-            <canvas
-              ref={canvasRef}
-              width="400"
-              height="400"
-              onClick={handleCanvasClick}
-              className={`wheel-canvas ${isSpinning ? 'spinning' : ''}`}
-            />
+            <div className="wheel-container" style={{ position: 'relative', display: 'inline-block' }}>
+              <canvas
+                ref={canvasRef}
+                width="400"
+                height="400"
+                onClick={handleCanvasClick}
+                className={`wheel-canvas ${isSpinning ? 'spinning' : ''}`}
+              />
+              <canvas
+                ref={arrowCanvasRef}
+                width="400"
+                height="400"
+                className="arrow-canvas"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  pointerEvents: 'none',
+                  zIndex: 10
+                }}
+              />
+            </div>
             
             <button
               className={`spin-button ${isSpinning ? 'spinning' : ''}`}
